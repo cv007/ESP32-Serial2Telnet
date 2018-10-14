@@ -60,13 +60,48 @@ void telnet_uart_handler(WiFiClient& client, bool init)
         Serial2.write(buf, len);
     }
 
-    //check UART for data
-    len = Serial2.available();
-    if(len){
-        if(len > 128) len = 128;
-        Serial2.readBytes(buf, len);
-        client_writer(client, buf, len);
-    }
+    //check UART for data, push it out to telnet
+
+    len = Serial2.readBytes(buf, 128);
+    if(len) client_writer(client, buf, len);
+
+//file: esp32-hal-uart.c
+//in /home/owner/.arduino15/packages/esp32/hardware/esp32/1.0.0/cores/esp32/
+//changed
+//while(uart->dev->status.rxfifo_cnt) {
+//to
+//while(uart->dev->status.rxfifo_cnt || (uart->dev->mem_rx_status.wr_addr != uart->dev->mem_rx_status.rd_addr)) {
+
+
+
+//Serial2.available() seems to return 0 when there are bytes in queue
+//the bytes are not lost and will still show up, but the queue counter seems to
+//somehoe get corrupted (maybe 1 count an hour or 2)
+//     len = Serial2.available();
+//     if(len){
+//         if(len > 128) len = 128;
+//         Serial2.readBytes(buf, len);
+//         client_writer(buf, len);
+//     }
+
+//this works
+//     if(Serial2.available()){
+//         size_t n = Serial2.readBytes(buf, 128);
+//         client_writer(client, buf, n);
+//     }
+
+//trying this
+    //read() returns -1 if no bytes available
+    //get up to 128bytes
+    //(no timeout involved)
+//     for( len=0;len<128;len++ ){
+//         int r = Serial2.read();
+//         if(r<0) break;
+//         buf[len]=r;
+//     }
+//     //if any bytes, send them out telnet
+//     if(len) client_writer(client, buf, len);
+
 }
 
 //handler for info telnet connection
@@ -120,6 +155,7 @@ void setup()
 
     //start UART and the servers
     Serial2.begin(230400);
+Serial2.setTimeout(1); //set timeout for reads
     telnet_info.start();
     telnet_uart.start();
 }

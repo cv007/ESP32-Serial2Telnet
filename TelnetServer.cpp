@@ -19,7 +19,7 @@ static void info(const char* nam, const char* msg, int port, IPAddress remip = {
 // class functions
 //=====================
 
-TelnetServer::TelnetServer(int port, const char* nam, handler h)
+TelnetServer::TelnetServer(int port, const char* nam, handler_func_t h)
     : m_server(port),
     m_port(port),
     m_name(nam),
