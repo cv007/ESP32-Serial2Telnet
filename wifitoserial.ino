@@ -26,26 +26,26 @@
 
 
 
+  console commands-
+  wifi add tomato1\t1234
+  reboot
+  wifi list
+  wifi erase
+
+
+
+
 
 */
 #include <WiFi.h>
 #include <WiFiMulti.h>
 
 #include "TelnetServer.hpp"
+#include "WifiCredentials.hpp"
 
-//connection list info to add
-typedef struct {
-    const char* ssid;
-    const char* password;
-} wifi_credentials_t;
-
-//my connection list (add more as needed)
-wifi_credentials_t wifi_credentials[] = {
-    #include "mycredentials.h" //file ignored by git
-    //{ "ssid", "password" }, ... (1 or more)
-};
 
 WiFiMulti wifiMulti;
+
 
 //boot0 switch- long press = run wifi access point
 #include "Button.hpp"
@@ -137,8 +137,24 @@ void setup()
     for(int i = 5; i > 0; Serial.printf("%d ", i), delay(1000), i--);
     Serial.printf("\n\n");
 
-    for(auto w : wifi_credentials){
-        wifiMulti.addAP(w.ssid, w.password);
+    WifiCredentials wifidata;
+    if(wifidata.get_wifi(0).c_str() == ""){
+        //no wifi credentials stored
+        //start access point
+        Serial.printf("no wifi credentials found in nvs storage\n");
+    }
+
+    for( uint8_t i = 0; ; i++ ){
+        String s = wifidata.get_wifi(i);
+        if(not s.length()){
+            Serial.printf("\n");
+            break; //done
+        }
+        int idx = s.indexOf('\t');
+        if(idx < 0) break; //no tab, not a good credential
+        s[idx] = 0; //change tab to 0 (terminate ssid string)
+        printf("using credentials from nvs storage...\n  %s  %s\n", &s[0], &s[idx+1]);
+        wifiMulti.addAP(&s[0], &s[idx+1]);
     }
 
     Serial.printf("Connecting wifi...");
@@ -158,9 +174,7 @@ void setup()
         ESP.restart(); //for now, just reboot and start over
     }
 
-    //start UART and the servers
-//     Serial2.begin(230400);
-//     Serial2.setTimeout(0); //set timeout for reads
+    //start the servers
     telnet_info.start();
     telnet_uart.start();
 }
