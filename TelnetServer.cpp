@@ -35,12 +35,20 @@ void TelnetServer::start()
     m_server.setNoDelay(true);
 }
 
+void TelnetServer::stop()
+{
+    info(m_name, "stopping", m_port);
+    stop_client();
+    m_server.end();
+}
+
 void TelnetServer::stop_client()
 {
     if(m_client) m_client.stop();               //stop client if not already
     if(!m_client_connected) return;             //was previously closed
     m_client_connected = false;                 //else update and print message
     info(m_name, "closed", m_port, m_client_ip);
+    m_handler(m_client, STOP);                  //call handler
 }
 
 void TelnetServer::check()
@@ -64,7 +72,7 @@ void TelnetServer::check_client()
             m_client_connected = true;
             m_client_ip = m_client.remoteIP();
             info(m_name, "new client", m_port, m_client_ip);
-            m_handler(m_client, true);          //call handler, true=init
+            m_handler(m_client, START);         //call handler
         }
     }
     if(!m_client && m_client_connected) stop_client(); //print message
@@ -72,6 +80,6 @@ void TelnetServer::check_client()
 
 void TelnetServer::check_data()
 {
-    if(m_client) m_handler(m_client, false);    //false= not an init call
+    if(m_client) m_handler(m_client, CHECK);   //call handler
 }
 

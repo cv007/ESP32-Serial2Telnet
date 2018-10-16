@@ -2,18 +2,17 @@
 #include <WiFi.h>
 
 struct TelnetServer {
-    typedef std::function<void(WiFiClient&, bool)> handler_func_t;
-    //bool = init? (can use if init needed when first connected)
-    //when connected, handler is called with bool=true
-    //normal handler call is bool=false
+    typedef enum : uint8_t { START, CHECK, STOP } msg_t;
+    typedef std::function<void(WiFiClient&, msg_t)> handler_func_t;
 
     TelnetServer(int port, const char* nam, handler_func_t h);
     void start();
-    void stop_client();
+    void stop();
     void check();
 
     private:
 
+    void stop_client();
     void check_client();
     void check_data();
 
