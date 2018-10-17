@@ -20,20 +20,35 @@
 
   initial setup- (initial firmware loaded)
         power on
-            check for wifi data, if none, goto access point mode
-            if wifi data, try to connect
-            if sw2 pressed >3 sec, goto access point mode
+            delay 5 seconds
+            if boot2ap flag on OR no wifi credentials stored-
+                start access point mode with telnet info port 2300 in use
+                boot2ap flag is cleared
+
+            try to connect to available wifi access points using stored credentials
+                if unable, keep trying
+                telnet port 2300 = info
+                telnet port 2302 = uart2
+
+            if sw2 pressed >3 sec, reboot to access point mode
+                if unable to connect to any wifi (and credentials are available),
+                user needs to press sw2 for > 3 seconds which will enable the boot2ap flag
+                after releasing sw2, the esp will reboot
+
+            if in access point mode-
+                can connect to info on port 2300 to enter wifi credentials using console commands
+                if sw2 pressed > 3 sec, reboot
+
 
 
 
   console commands-
-  credentials add tomato1\t1234
-  reboot
 
-  credentials list
-  credentials add 0 ssid=test1
-  credentials add 0 pass=pass1
-  credentials erase 0
+  credentials list              //list all stored ssid/pass data
+  credentials add 0 ssid=test1  //store ssid in slot 0
+  credentials add 0 pass=pass1  //store password in slot 0
+  credentials erase 0           //erase ssid/pass of slot 0
+  boot2ap                       //show boot2ap flag status
 
 
 
@@ -139,6 +154,26 @@ void list_credentials(WiFiClient& client)
     }
 }
 
+void erase_credentials(WiFiClient& client, String s)
+{
+    WifiCredentials wifidata;
+    //"credentials erase 0"
+    s = s.substring(18);
+    int idx = 0;
+    if(s.substring(0,1) != "0"){
+        idx = s.toInt();
+        if(idx == 0){
+            client_writer(client, "missing index or index not valid\n");
+            return;
+        }
+    }
+    if(idx > wifidata.maxn()){
+        client_writer(client, "index is out of range\n");
+        return;
+    }
+    wifidata.put_ssid(idx, "");
+    wifidata.put_pass(idx, "");
+}
 void add_credentials(WiFiClient& client, String s)
 {
     WifiCredentials wifidata;
@@ -187,6 +222,7 @@ bool check_cmd(WiFiClient& client, uint8_t* buf, size_t len)
     if(s.substring(0,16) == "credentials list"){ list_credentials(client); }
     else if(s.substring(0,16) == "credentials add "){ add_credentials(client, s); }
     else if(s.substring(0,7) == "boot2ap"){ boot2ap(client); }
+    else if(s.substring(0,18) == "credentials erase "){ erase_credentials(client, s); }
     else { client_writer(client, "invalid command\n"); }
     return true;
 }
@@ -230,13 +266,13 @@ void telnet_info_handler(WiFiClient& client, TelnetServer::msg_t msg)
 }
 
 //create telnet server for both
-TelnetServer telnet_info(2323, "info", telnet_info_handler);
-TelnetServer telnet_uart(23, "uart", telnet_uart_handler);
+TelnetServer telnet_info(2300, "info", telnet_info_handler);
+TelnetServer telnet_uart(2302, "uart2", telnet_uart_handler);
 
 void ap_mode(){
     Serial.printf("\nstarting access point...");
     WiFi.softAP("SNAP-esp32");
-    TelnetServer telnet_ap(2323, "apinfo", telnet_info_handler);
+    TelnetServer telnet_ap(2300, "apinfo", telnet_info_handler);
     Serial.printf("%s\n\n",WiFi.softAPIP().toString().c_str());
     delay(5000);
     telnet_ap.start();
@@ -274,7 +310,7 @@ void setup()
     for( uint8_t i = 0; i < wifidata.maxn(); i++ ){
         String s = wifidata.get_ssid(i);
         String p = wifidata.get_pass(i);
-        if(not s.length()) continue;
+        if(not s.length()) continue; //if ssid blank, skip
         printf("using credentials from nvs storage...\n  %s  %s\n", &s[0], &p[0]);
         wifiMulti.addAP(&s[0], &p[0]);
         found1 = true;
