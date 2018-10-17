@@ -16,16 +16,18 @@
 
 struct WifiCredentials {
     WifiCredentials();
-    String get_wifi(uint8_t);           //index -> credential string (empty if none)
-    size_t put_wifi(String, String);    //ssid,pass -> bytes written
-    uint8_t index();                    //-> next index to write ("wifiN", N=index)
+    String get_ssid(uint8_t);           //index -> ssid string (empty if none)
+    String get_pass(uint8_t);           //index -> pass string (empty if none)
+    size_t put_ssid(uint8_t, String);   //index, ssid -> bytes written
+    size_t put_pass(uint8_t, String);   //index, pass -> bytes written
+    uint8_t maxn();                     //-> max number of wifi credentials can store
     bool clear();                       //clear all nvs entries for this namespace
+    bool boot2ap();                     //get value to run AP or STA
+    void boot2ap(bool);                 //set value to run AP or STA
 
     private:
     Preferences m_credentials;
-    uint8_t m_index;
     const uint8_t m_maxn = 8;
-    void next_index();
 };
 
 

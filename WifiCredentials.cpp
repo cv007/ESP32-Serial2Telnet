@@ -3,37 +3,48 @@
 WifiCredentials::WifiCredentials()
 {
     m_credentials.begin("credentials", false); //false = r/w
-    m_index = m_credentials.getUInt("index",0);
 }
 
-uint8_t WifiCredentials::index()
+uint8_t WifiCredentials::maxn()
 {
-    return m_index;
+    return m_maxn;
 }
 
-void WifiCredentials::next_index()
-{
-    if(++m_index > m_maxn) m_index = 0;
-    m_credentials.putUInt("index", m_index);
-}
-
-String WifiCredentials::get_wifi(uint8_t idx)
+String WifiCredentials::get_ssid(uint8_t idx)
 {
     if(idx > m_maxn) return {};
-    String s("wifi" + String(idx));
+    String s("ssid" + String(idx));
+    return m_credentials.getString(s.c_str(), {});
+}
+String WifiCredentials::get_pass(uint8_t idx)
+{
+    if(idx > m_maxn) return {};
+    String s("pass" + String(idx));
     return m_credentials.getString(s.c_str(), {});
 }
 
-size_t WifiCredentials::put_wifi(String ssid, String pass)
+size_t WifiCredentials::put_ssid(uint8_t idx, String ssid)
 {
-    if(ssid.length() > 31 || pass.length() > 63) return 0;
-    size_t ret = m_credentials.putString(String("wifi" + String(m_index)).c_str(), String(ssid + '\t' + pass));
-    if(ret) next_index();
-    return ret;
+    if(ssid.length() > 31 || idx > m_maxn) return 0;
+    return m_credentials.putString(String("ssid" + String(idx)).c_str(), ssid);
+}
+size_t WifiCredentials::put_pass(uint8_t idx, String pass)
+{
+    if(pass.length() > 63 || idx > m_maxn) return 0;
+    return m_credentials.putString(String("pass" + String(idx)).c_str(), pass);
 }
 
 bool WifiCredentials::clear()
 {
-    m_index = 0;
     return m_credentials.clear();
+}
+
+bool WifiCredentials::boot2ap()
+{
+    return m_credentials.getBool("bootAP",0);
+}
+void WifiCredentials::boot2ap(bool tf)
+{
+    if(boot2ap() == tf) return; //no change, no need to write
+    m_credentials.putBool("bootAP", tf);
 }
