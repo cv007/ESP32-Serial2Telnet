@@ -8,16 +8,22 @@
   wifi add 0 pass=pass1         //store password in slot 0
   wifi erase 0                  //erase ssid/pass of slot 0
 
-  sys boot                      //show boot2ap flag status (AP / STA)
+  sys boot                      //show boot flag status (AP / STA)
   sys boot=AP                   //set boot mode
   sys boot=STA
   sys erase all                 //clear all stored data
 
   net info
   net hostname                  //show hostname (dhcp server will record this name)
+                                //(this shows the current hardware setting, not the stored value
+                                // if done right, both should be the same)
   net hostname=myname           //set hostname (max 32 chars)
+                                //if not set, default is-
+                                //  espressif
   net APname                    //show APname (ssid name for access point mode)
   net APname=myAPname           //set APname (max 32 chars)
+                                //if not set, default is -
+                                //  SNAP-NNNN-AP-telnet2300 (NNNN is last 4 hex digits of mac)
   net mac                       //show mac address
 */
 
