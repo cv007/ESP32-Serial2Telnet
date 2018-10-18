@@ -42,23 +42,8 @@
 
 
 
-  console commands-             //if completed, will have comments
-                                //no comments = just an idea yet
+  console commands- see "Commander.hpp"
 
-  credentials list              //list all stored ssid/pass data
-  credentials add 0 ssid=test1  //store ssid in slot 0
-  credentials add 0 pass=pass1  //store password in slot 0
-  credentials erase 0           //erase ssid/pass of slot 0
-  boot2ap                       //show boot2ap flag status
-
-  credentials set keyname=string
-
-  net info
-  net hostname                  //show hostname (dhcp server will record this name)
-  net hostname=myname           //set hostname (max 32 chars)
-  net APname                    //show APname (ssid name for access point mode)
-  net APname=myAPname           //set APname (max 32 chars)
-  net mac                       //show mac address
 
 
 */
@@ -67,6 +52,7 @@
 
 #include "TelnetServer.hpp"
 #include "WifiCredentials.hpp"
+#include "Commander.hpp"
 
 
 WiFiMulti wifiMulti;
@@ -109,151 +95,6 @@ void telnet_uart_handler(WiFiClient& client, TelnetServer::msg_t msg)
 
 }
 
-void boot2ap(WiFiClient& client)
-{
-    //"boot2ap"
-    WifiCredentials wifidata;
-    client.write("boot2ap: %d\n", wifidata.boot2ap());
-}
-
-void list_credentials(WiFiClient& client)
-{
-    uint8_t buf[256];
-    WifiCredentials wifidata;
-    client.printf("[##][ssid][pass]\n\n");
-    for( uint8_t i = 0; i < wifidata.maxn(); i++ ){
-        String s = wifidata.ssid(i);
-        String p = wifidata.pass(i);
-        client.printf("[%2d][%s][%s]\n", i, &s[0], &p[0]);
-    }
-}
-
-void erase_credentials(WiFiClient& client, String s)
-{
-    WifiCredentials wifidata;
-    //"credentials erase 0"
-    s = s.substring(18);
-    int idx = 0;
-    if(s.substring(0,1) != "0"){
-        idx = s.toInt();
-        if(idx == 0){
-            client.write("missing index or index not valid\n");
-            return;
-        }
-    }
-    if(idx > wifidata.maxn()){
-        client.write("index is out of range\n");
-        return;
-    }
-    wifidata.ssid(idx, "");
-    wifidata.pass(idx, "");
-}
-void add_credentials(WiFiClient& client, String s)
-{
-    WifiCredentials wifidata;
-    //"credentials add 0 ssid=myssid"
-    //"credentials add 0 pass=mypass"
-    s = s.substring(16);
-    //0 ssid=myssid"
-    //0 pass=mypass"
-    int idx = 0;
-    if(s.substring(0,2) != "0 "){
-        idx = s.toInt();
-        if(idx == 0){
-            client.write("missing index or index not valid\n");
-            return;
-        }
-    }
-    if(idx > wifidata.maxn()){
-        client.write("index is out of range\n");
-        return;
-    }
-
-    int si = s.indexOf("ssid=");
-    if(si > 0){
-        wifidata.ssid(idx, &s[si+5]);
-        return;
-    }
-
-    si = s.indexOf("pass=");
-    if(si > 0){
-        wifidata.pass(idx, &s[si+5]);
-        return;
-    }
-    client.write("improper use of command\n");
-}
-
-void do_hostname(WiFiClient& client, String s)
-{
-    WifiCredentials wifidata;
-    //"net hostname"
-    s =s.substring(12);
-    if(not s[0]){
-        client.printf("%s\n", WiFi.getHostname());
-        return;
-    }
-    //"net hostname=myname"
-    if(s[0] == '='){
-        s = s.substring(1);
-        if(s.length() > 32){
-            client.write("hostname too long (32 chars max)\n");
-            return;
-        }
-        wifidata.hostname(s); //nvs storage
-        WiFi.setHostname(s.c_str()); //and out to tcpip (may not see until reboot)
-        return;
-    }
-    client.write("improper use of command\n");
-}
-
-void do_APname(WiFiClient& client, String s)
-{
-    WifiCredentials wifidata;
-    //"net APname"
-    s =s.substring(10);
-    if(not s[0]){
-        client.printf("%s\n", wifidata.APname().c_str());
-        return;
-    }
-    //"net APname=myAPname"
-    if(s[0] == '='){
-        s = s.substring(1);
-        if(s.length() > 32){
-            client.write("APname too long (32 chars max)\n");
-            return;
-        }
-        wifidata.APname(s); //nvs storage
-        return;
-    }
-    client.write("improper use of command\n");
-}
-
-void get_mac(WiFiClient& client)
-{
-    client.printf("%s\n", WiFi.macAddress().c_str());
-}
-
-bool check_cmd(WiFiClient& client, uint8_t* buf, size_t len)
-{
-    uint8_t* p = buf; //buf will have 0 terminator
-    while(*p >= ' ') p++; //find any char < space
-    if(*p == 0) return false; //found 0 terminator, return and keep adding to buffer
-    if(*p != '\r' && *p != '\n') return true; //no cr or lf, not a command
-    //found a cr or lf, replace with 0 to terminate (exclude cr/lf)
-    *p = 0;
-    String s((const char*)buf); //to string
-    //process s
-    if(s.substring(0,16) == "credentials list"){ list_credentials(client); }
-    else if(s.substring(0,16) == "credentials add "){ add_credentials(client, s); }
-    else if(s.substring(0,7) == "boot2ap"){ boot2ap(client); }
-    else if(s.substring(0,18) == "credentials erase "){ erase_credentials(client, s); }
-    else if(s.substring(0,12) == "net hostname"){ do_hostname(client, s); }
-    else if(s.substring(0,10) == "net APname"){ do_APname(client, s); }
-    else if(s.substring(0,7) == "net mac"){ get_mac(client); }
-    else { client.printf("invalid command\n"); }
-    return true;
-}
-
 //handler for info telnet connection
 void telnet_info_handler(WiFiClient& client, TelnetServer::msg_t msg)
 {
@@ -279,12 +120,11 @@ void telnet_info_handler(WiFiClient& client, TelnetServer::msg_t msg)
                 //client.write(&buf[idx], len); //echo back
                 idx += len; //increase index by length
                 buf[idx] = 0; //0 terminate
-                if(check_cmd(client, buf, sizeof(buf))){
+                if(Commander::process(client, buf)){
                     idx = 0; //if \r or \n found, can reset index
-                    client.write("$ ");
                 }
                 if(idx >= sizeof(buf)-1){
-                    client.write("\n\ncommand too long :(\n\n$ "); //command buffer overflow
+                    client.printf("\n\ncommand too long :(\n\n$ "); //command buffer overflow
                     idx = 0; //start over
                 }
             }
@@ -296,6 +136,10 @@ void telnet_info_handler(WiFiClient& client, TelnetServer::msg_t msg)
 TelnetServer telnet_info(2300, "info", telnet_info_handler);
 TelnetServer telnet_uart(2302, "uart2", telnet_uart_handler);
 
+//start access point, telnet server port 2300
+//to access-
+//telnet 192.168.4.1 2300
+//then run commands (mainly to set wifi credentials)
 void ap_mode(){
     WifiCredentials wifidata;
     Serial.printf("\nstarting access point...");
@@ -327,9 +171,9 @@ void setup()
     Serial.printf("\n\n");
 
     WifiCredentials wifidata;
-    if(wifidata.boot2ap()){
+    if(wifidata.boot() == wifidata.AP){
         //was flagged to boot to AP mode
-        wifidata.boot2ap(false); //turn off if was on
+        wifidata.boot(wifidata.STA); //back to STA for next boot
         //start access point
         ap_mode();
     }
@@ -407,7 +251,7 @@ void loop()
         telnet_info.stop();
         telnet_uart.stop();
         WifiCredentials wifidata;
-        wifidata.boot2ap(true);
+        wifidata.boot(wifidata.AP);
         //wait for release so sw is not pressed when rebooted
         //which would then boot into bootloader
         while(sw1.pressed() > 3000);

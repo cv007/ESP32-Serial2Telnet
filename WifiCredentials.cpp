@@ -48,9 +48,10 @@ size_t WifiCredentials::hostname(String s){ return puts(String("hostname"), s); 
 String WifiCredentials::APname(){           return gets(String("APname"), {}); }
 size_t WifiCredentials::APname(String s){   return puts(String("APname"), s); }
 bool WifiCredentials::clear(){              return m_credentials.clear(); }
-bool WifiCredentials::boot2ap(){            return m_credentials.getBool("boot2ap",0); }
-void WifiCredentials::boot2ap(bool tf)
+bool WifiCredentials::boot(){               return m_credentials.getBool("boot", STA); }
+void WifiCredentials::boot(bool tf)
 {
-    if(boot2ap() == tf) return; //no change, no need to write
-    m_credentials.putBool("bootAP", tf);
+    if(boot() == tf) return; //no change, no need to write
+    m_credentials.putBool("boot", tf);
 }
+bool WifiCredentials::erase_all(){ return m_credentials.clear(); }

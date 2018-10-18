@@ -17,10 +17,14 @@ struct WifiCredentials {
     size_t hostname(String);
     String APname();
     size_t APname(String s);
-    uint8_t maxn();                     //-> max number of wifi credentials can store
-    bool clear();                       //clear all nvs entries for this namespace
-    bool boot2ap();                     //get value to run AP or STA
-    void boot2ap(bool);                 //set value to run AP or STA
+    uint8_t maxn();                 //-> max number of wifi credentials can store
+    bool clear();                   //clear all nvs entries for this namespace
+
+    enum : bool { STA, AP };
+    bool boot();                    //get value to run AP or STA
+    void boot(bool);                //set value to run AP or STA
+
+    bool erase_all();               //erase all data in this namespace
 
 
     private:
