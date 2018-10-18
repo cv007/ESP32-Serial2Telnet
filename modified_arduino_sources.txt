@@ -1,0 +1,67 @@
+
+==fix rxfifo_cnt sometimes reading as 0 when there are bytes available
+
+    file: /home/owner/.arduino15/packages/esp32/hardware/esp32/1.0.0/cores/esp32/esp32-hal-uart.c
+    changed in _uart_isr
+        while(uart->dev->status.rxfifo_cnt) {
+    to
+        while(uart->dev->mem_rx_status.wr_addr != uart->dev->mem_rx_status.rd_addr) {
+
+    changed in uartFlush
+        while(uart->dev->status.rxfifo_cnt != 0 || (uart->dev->mem_rx_status.wr_addr != uart->dev->mem_rx_status.rd_addr)) {
+    to
+        while(uart->dev->mem_rx_status.wr_addr != uart->dev->mem_rx_status.rd_addr) {
+
+
+==hostname, keep a local copy in setHostname, and have begin() call setHostname with a NULL value
+  so that the hostname has to only be set once, and any further disconnect/connect will still set the hostname
+
+    file: /home/owner/.arduino15/packages/esp32/hardware/esp32/1.0.0/libraries/WiFi/src/WiFiSTA.cpp
+
+        ==FROM==
+
+        /** line 578
+        * Set the station interface Host name.
+        * @param  hostname  pointer to const string
+        * @return true on   success
+        */
+        bool WiFiSTAClass::setHostname(const char * hostname)
+        {
+            if(WiFiGenericClass::getMode() == WIFI_MODE_NULL){
+                return false;
+            }
+            return tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, hostname) == 0;
+        }
+
+        ==TO==
+
+        * Set the station interface Host name.
+        * @param  hostname  pointer to const string or NULL to use cached hostname
+        * @return true on   success
+        */
+        bool WiFiSTAClass::setHostname(const char * hostname)
+        {
+            String _hostname;
+            if(hostname) _hostname = hostname;
+            if(WiFiGenericClass::getMode() == WIFI_MODE_NULL || _hostname.length() == 0){
+                return false;
+            }
+            return tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, _hostname.c_str()) == 0;
+        }
+
+
+
+        file: /home/owner/.arduino15/packages/esp32/hardware/esp32/1.0.0/libraries/WiFi/src/WiFiGeneric.cpp
+
+                esp_err_t WiFiGenericClass::_eventCallback(void *arg, system_event_t *event)
+        {
+            log_d("Event: %d - %s", event->event_id, system_event_names[event->event_id]);
+            if(event->event_id == SYSTEM_EVENT_SCAN_DONE) {
+                WiFiScanClass::_scanDone();
+
+            } else if(event->event_id == SYSTEM_EVENT_STA_START) {
+                WiFiSTAClass::_setStatus(WL_DISCONNECTED);
+                WiFi.setHostname(NULL); //<<<<< added line
+                setStatusBits(STA_STARTED_BIT);
+
+

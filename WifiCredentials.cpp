@@ -10,39 +10,45 @@ uint8_t WifiCredentials::maxn()
     return m_maxn;
 }
 
-String WifiCredentials::get_ssid(uint8_t idx)
+//private
+String WifiCredentials::gets(String s, String alt)
 {
-    if(idx > m_maxn) return {};
-    String s("ssid" + String(idx));
-    return m_credentials.getString(s.c_str(), {});
+    return m_credentials.getString(s.c_str(), alt);
 }
-String WifiCredentials::get_pass(uint8_t idx)
+size_t WifiCredentials::puts(String key, String s)
+{
+    return m_credentials.putString(key.c_str(), s);
+}
+//
+
+String WifiCredentials::ssid(uint8_t idx)
 {
     if(idx > m_maxn) return {};
-    String s("pass" + String(idx));
-    return m_credentials.getString(s.c_str(), {});
+    return gets(String("ssid" + String(idx)), {});
+}
+String WifiCredentials::pass(uint8_t idx)
+{
+    if(idx > m_maxn) return {};
+    return gets(String("pass" + String(idx)), {});
 }
 
-size_t WifiCredentials::put_ssid(uint8_t idx, String ssid)
+size_t WifiCredentials::ssid(uint8_t idx, String ssid)
 {
     if(ssid.length() > 31 || idx > m_maxn) return 0;
-    return m_credentials.putString(String("ssid" + String(idx)).c_str(), ssid);
+    return puts(String("ssid" + String(idx)), ssid);
 }
-size_t WifiCredentials::put_pass(uint8_t idx, String pass)
+size_t WifiCredentials::pass(uint8_t idx, String pass)
 {
     if(pass.length() > 63 || idx > m_maxn) return 0;
-    return m_credentials.putString(String("pass" + String(idx)).c_str(), pass);
+    return puts(String("pass" + String(idx)), pass);
 }
 
-bool WifiCredentials::clear()
-{
-    return m_credentials.clear();
-}
-
-bool WifiCredentials::boot2ap()
-{
-    return m_credentials.getBool("bootAP",0);
-}
+String WifiCredentials::hostname(){         return gets(String("hostname"), {}); }
+size_t WifiCredentials::hostname(String s){ return puts(String("hostname"), s); }
+String WifiCredentials::APname(){           return gets(String("APname"), {}); }
+size_t WifiCredentials::APname(String s){   return puts(String("APname"), s); }
+bool WifiCredentials::clear(){              return m_credentials.clear(); }
+bool WifiCredentials::boot2ap(){            return m_credentials.getBool("boot2ap",0); }
 void WifiCredentials::boot2ap(bool tf)
 {
     if(boot2ap() == tf) return; //no change, no need to write
