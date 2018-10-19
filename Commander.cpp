@@ -88,7 +88,6 @@ bool Commander::process(WiFiClient& client, uint8_t* buf)
         if(s[0] != ' '){ help(client); return true;  } //no space after command
         s.trim();
         if(not s[0]){ help(client); return true; } //unfinshed command
-
         //check for sub command
         for(i++; commands[i].func; i++){
             if(not s.startsWith(commands[i].cmd)) continue;
@@ -178,13 +177,10 @@ static void wifi_list(WiFiClient& client, String s)
 //wifi add
 static void wifi_add(WiFiClient& client, String s)
 {
-    if(s[0] != ' '){ help(client); return;  }
-    s.trim();
+    //"0 ssid=myssid"
     WifiCredentials wifidata;
-    //"wifi add 0 ssid=myssid"
-    //"wifi add 0 pass=mypass"
-    //0 ssid=myssid"
-    //0 pass=mypass"
+    //"0 ssid=myssid"
+    //"0 pass=mypass"
     int idx = 0;
     if(s.substring(0,2) != "0 "){
         idx = s.toInt();
@@ -245,7 +241,7 @@ static void net_hostname(WiFiClient& client, String s)
     //=myname
     if(s[0] == '='){
         WifiCredentials wifidata;
-        s.trim();
+        s = s.substring(1);
         if(s.length() > 32){
             client.printf("hostname too long (32 chars max)\n");
             return;
@@ -268,7 +264,7 @@ static void net_APname(WiFiClient& client, String s)
     //=myAPname
     if(s[0] == '='){
         WifiCredentials wifidata;
-        s.trim();
+        s = s.substring(1);
         if(s.length() > 32){
             client.printf("APname too long (32 chars max)\n");
             return;

@@ -1,4 +1,5 @@
 #include "TelnetServer.hpp"
+#include "Commander.hpp"
 
 //=====================
 // local functions
@@ -19,12 +20,16 @@ static void info(const char* nam, const char* msg, int port, IPAddress remip = {
 // class functions
 //=====================
 
-TelnetServer::TelnetServer(int port, const char* nam, handler_func_t h)
+TelnetServer::TelnetServer(int port, const char* nam, serve_t typ)
     : m_server(port),
     m_port(port),
     m_name(nam),
     m_client_connected(false),
-    m_handler(h)
+    m_serve_type(typ),
+    m_serial(typ == TelnetServer::SERIAL0 ? Serial :
+             typ == TelnetServer::SERIAL1 ? Serial1 :
+             typ == TelnetServer::SERIAL2 ? Serial2 :
+             Serial) //INFO will set as Serial, but will be unused
 {
 }
 
@@ -45,16 +50,16 @@ void TelnetServer::stop()
 void TelnetServer::stop_client()
 {
     if(m_client) m_client.stop();               //stop client if not already
-    if(!m_client_connected) return;             //was previously closed
+    if(not m_client_connected) return;          //was previously closed
     m_client_connected = false;                 //else update and print message
     info(m_name, "closed", m_port, m_client_ip);
-    m_handler(m_client, STOP);                  //call handler
+    handler(STOP);                              //call handler
 }
 
 void TelnetServer::check()
 {
     check_client();
-    check_data();
+    handler(CHECK);
 }
 
 void TelnetServer::check_client()
@@ -65,21 +70,87 @@ void TelnetServer::check_client()
             info(m_name, "rejected", m_port);
         } else {                                //can accept new client
             m_client = m_server.available();
-            if (!m_client){                     //failed for some reason
+            if (not m_client){                  //failed for some reason
                 info(m_name, "failed", m_port);
                 return;                         //failed to connect
             }
             m_client_connected = true;
             m_client_ip = m_client.remoteIP();
             info(m_name, "new client", m_port, m_client_ip);
-            m_handler(m_client, START);         //call handler
+            handler(START);                     //call handler
         }
     }
-    if(!m_client && m_client_connected) stop_client(); //print message
+    if(not m_client && m_client_connected) stop_client(); //print message
 }
 
-void TelnetServer::check_data()
+void TelnetServer::handler(msg_t msg)
 {
-    if(m_client) m_handler(m_client, CHECK);   //call handler
+    if(not m_client) return;
+    if(m_serve_type == INFO) handler_info(msg);
+    else handler_uart(msg);
 }
 
+void TelnetServer::handler_info(msg_t msg)
+{
+    static uint8_t buf[128];
+    static uint8_t idx;
+    switch(msg){
+        case START:
+            m_client.printf("\nConnected to info port\n\n$ ");
+            break;
+        case STOP:
+            break;
+        case CHECK:
+            //check clients for data
+            //get data from the telnet client
+
+            //my telnet client seems to only send after a cr/lf
+            //not sure what other telnet clients do
+
+            size_t len = m_client.available();
+            if(len){
+                if(len+idx >= sizeof(buf)-1) len = sizeof(buf)-1-idx; //leave room for 0
+                m_client.read(&buf[idx], len);
+                idx += len; //increase index by length
+                buf[idx] = 0; //0 terminate
+                if(Commander::process(m_client, buf)){
+                    idx = 0; //if \r or \n found, can reset index
+                }
+                if(idx >= sizeof(buf)-1){
+                    m_client.printf("\n\ncommand too long :(\n\n$ "); //command buffer overflow
+                    idx = 0; //start over
+                }
+            }
+
+    }
+
+}
+void TelnetServer::handler_uart(msg_t msg)
+{
+    switch(msg){
+        case START:
+            //set serial timeout for reads
+            m_serial.begin(230400);
+            m_serial.setTimeout(0);
+            break;
+        case TelnetServer::STOP:
+            m_serial.end();
+            break;
+        case TelnetServer::CHECK:
+            size_t len;
+            uint8_t buf[128];
+            //get data from the telnet client and push it to the UART
+            //m_serial.write is blocking, will complete-
+            //max 5.5ms- 230400baud/128chars, max 11ms 115200baud/128chars
+            len = m_client.available();
+            if(len){
+                if(len > 128) len = 128;
+                m_client.read(buf, len);
+                m_serial.write(buf, len);
+            }
+            //check UART for data, push it out to telnet
+            len = m_serial.readBytes(buf, 128);
+            if(len) m_client.write(buf, len);
+    }
+
+}

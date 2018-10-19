@@ -16,14 +16,13 @@
   net info
   net hostname                  //show hostname (dhcp server will record this name)
                                 //this shows the both the current hardware and stored value
-                                //(if done right, both should be the same)
+                                //(both should be the same)
+
   net hostname=myname           //set hostname (max 32 chars)
-                                //if not set, default is-
-                                //  espressif
+                                //if not set, default is- espressif
+
   net APname                    //show APname (ssid name for access point mode)
   net APname=myAPname           //set APname (max 32 chars)
-                                //if not set, default is -
-                                //  SNAP-NNNN-AP-telnet2300 (NNNN is last 4 hex digits of mac)
   net mac                       //show mac address
 */
 
