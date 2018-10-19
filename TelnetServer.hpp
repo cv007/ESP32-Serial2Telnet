@@ -38,6 +38,8 @@ struct TelnetServer {
     currently baud is fixed to 230400
 
     will have to do a m_serial.end()/m_serial.begin(baud) to change baud
-
     will have to come up with way to communicate that (via info port)
+    can just end/begin anywhere as Serial/1/2 are global
+    probably just put in Commander-
+        serial 0 baud 115200
 */
