@@ -117,7 +117,6 @@ void telnet_info_handler(WiFiClient& client, TelnetServer::msg_t msg)
             if(len){
                 if(len+idx >= sizeof(buf)-1) len = sizeof(buf)-1-idx; //leave room for 0
                 client.read(&buf[idx], len);
-                //client.write(&buf[idx], len); //echo back
                 idx += len; //increase index by length
                 buf[idx] = 0; //0 terminate
                 if(Commander::process(client, buf)){

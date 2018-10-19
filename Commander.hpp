@@ -15,8 +15,8 @@
 
   net info
   net hostname                  //show hostname (dhcp server will record this name)
-                                //(this shows the current hardware setting, not the stored value
-                                // if done right, both should be the same)
+                                //this shows the both the current hardware and stored value
+                                //(if done right, both should be the same)
   net hostname=myname           //set hostname (max 32 chars)
                                 //if not set, default is-
                                 //  espressif

@@ -21,23 +21,27 @@ static void net_mac(WiFiClient&, String);
 // command list - name:function
 //=============================================================================
 typedef void(*cmdfunc_t)(WiFiClient&, String);
-typedef struct { const char* cmd; cmdfunc_t func; } cmd_t;
+typedef struct {
+    const char* cmd;
+    cmdfunc_t func;
+    const char* help;
+} cmd_t;
 
 static cmd_t commands[] = {
-        { "sys",        NULL },             //root command
-        { "boot",       sys_boot },         //sub commands
-        { "reboot",     sys_reboot },
-        { "erase all",  sys_erase_all },
+        { "sys",        NULL,           NULL },
+        {   "boot",     sys_boot,       "boot | boot=AP | boot=STA" },
+        {   "reboot",   sys_reboot,     NULL },
+        {   "erase all",sys_erase_all,  NULL   },
 
-        { "wifi",       NULL },
-        { "list",       wifi_list },
-        { "add",        wifi_add },
-        { "erase",      wifi_erase },
+        { "wifi",       NULL,           NULL },
+        {   "list",     wifi_list,      NULL },
+        {   "add",      wifi_add,       "add # ssid=ssidname | add # pass=password" },
+        {   "erase",    wifi_erase,     "erase #" },
 
-        { "net",        NULL },
-        { "hostname",   net_hostname },
-        { "APname",     net_APname },
-        { "mac",        net_mac },
+        { "net",        NULL,           NULL },
+        {   "hostname", net_hostname,   "hostname | hostname=myname" },
+        {   "APname",   net_APname,     "APname | APname=myapname" },
+        {   "mac",      net_mac,        NULL },
 
         { NULL,         NULL }              //end of table
 };
@@ -53,7 +57,9 @@ void help(WiFiClient& client)
             ii = i; //save root command index
             continue; //don't print root command
         }
-        client.printf("  %s %s\n", commands[ii].cmd, commands[i].cmd);
+        client.printf("  %s %s\n",
+            commands[ii].cmd, commands[i].help ? commands[i].help : commands[i].cmd
+        );
     }
     client.printf("\n$ ");
 }
@@ -149,9 +155,22 @@ static void wifi_list(WiFiClient& client, String s)
     if(s[0]){ bad(client); return; }
     WifiCredentials wifidata;
     int max = wifidata.maxn();
-    client.printf("[##][ssid][pass]\n\n");
+    int maxslen = 0;
+    int maxplen = 0;
+    //get max len of chars for each field
     for( auto i = 0; i < max; i++ ){
-        client.printf("[%2d][%s][%s]\n",
+        int s = wifidata.ssid(i).length();
+        int p = wifidata.pass(i).length();
+        if(s > maxslen) maxslen = s;
+        if(p > maxplen) maxplen = p;
+    }
+    String fmt{"  #  %-" + String(maxslen) + "s  %-" + String(maxplen) + "s \n"};
+    client.printf(fmt.c_str(),"SSID","PASS");
+    fmt = " %2d  %-" + String(maxslen) + "s  %-" + String(maxplen) + "s \n";
+    for(auto i = maxslen + maxplen + 10; i; client.printf("-"), i--);
+    client.printf("\n");
+    for( auto i = 0; i < max; i++ ){
+        client.printf(fmt.c_str(),
             i, wifidata.ssid(i).c_str(), wifidata.pass(i).c_str()
         );
     }
