@@ -3,7 +3,12 @@
 
 struct TelnetServer {
 
+    private:
+
     typedef enum : uint8_t { START, CHECK, STOP } msg_t;
+
+    public:
+
     typedef enum { SERIAL0, SERIAL1, SERIAL2, INFO } serve_t;
 
     //port, name, handler, type
@@ -16,7 +21,6 @@ struct TelnetServer {
     private:
 
     void stop_client();
-    void check_client();
 
     void handler(msg_t);
     void handler_info(msg_t);

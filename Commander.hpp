@@ -29,9 +29,7 @@
 struct Commander {
 
     //WiFiClient&   - so can print to
-    //uint8_t*      - command line buffer (always 0 terminated)
-    //return        - false = keep adding to buffer (no cr or lf found)
-    //              - true = caller can discard buffer and start new command buffer
-    static bool process(WiFiClient&, uint8_t*);
+    //String        - command line string (already trimmed)
+    static void process(WiFiClient&, String);
 
 };

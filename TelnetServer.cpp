@@ -58,12 +58,7 @@ void TelnetServer::stop_client()
 
 void TelnetServer::check()
 {
-    check_client();
-    handler(CHECK);
-}
-
-void TelnetServer::check_client()
-{
+    //check for new clients, dropped clients
     if(m_server.hasClient()){
         if(m_client){                           //already have a client
             m_server.available().stop();        //so reject
@@ -81,6 +76,9 @@ void TelnetServer::check_client()
         }
     }
     if(not m_client && m_client_connected) stop_client(); //print message
+
+    //check handler
+    handler(CHECK);
 }
 
 void TelnetServer::handler(msg_t msg)
@@ -92,8 +90,6 @@ void TelnetServer::handler(msg_t msg)
 
 void TelnetServer::handler_info(msg_t msg)
 {
-    static uint8_t buf[128];
-    static uint8_t idx;
     switch(msg){
         case START:
             m_client.printf("\nConnected to info port\n\n$ ");
@@ -101,30 +97,44 @@ void TelnetServer::handler_info(msg_t msg)
         case STOP:
             break;
         case CHECK:
-            //check clients for data
-            //get data from the telnet client
+            //check client for data
 
             //my telnet client seems to only send after a cr/lf
             //not sure what other telnet clients do
 
-            size_t len = m_client.available();
+           static String s;
+           static const auto maxcmd_len = 127;
+           size_t len = m_client.available();
             if(len){
-                if(len+idx >= sizeof(buf)-1) len = sizeof(buf)-1-idx; //leave room for 0
-                m_client.read(&buf[idx], len);
-                idx += len; //increase index by length
-                buf[idx] = 0; //0 terminate
-                if(Commander::process(m_client, buf)){
-                    idx = 0; //if \r or \n found, can reset index
+                char c = 0;
+                //read up to len bytes, while less than max cmd size
+                for(; len && s.length() < maxcmd_len; len--){
+                    c = m_client.read(); //get 1 byte
+                    if(c >= ' '){ s += c; continue; } //if a char, add and keep going
+                    if(c == '\r' || c == '\n') break; //found command end
+                    //special char, not cr/lf
+                    //clear string
+                    s = "";
                 }
-                if(idx >= sizeof(buf)-1){
+                //check last char- if cr or lf, process
+                if(c == '\r' || c == '\n'){
+                    s.trim();
+                    if(s.length()){
+                        Commander::process(m_client, s);
+                        s = "";
+                        m_client.printf("\n$ ");
+                    }
+                }
+                //if too many chars
+                if(s.length() >= maxcmd_len){
                     m_client.printf("\n\ncommand too long :(\n\n$ "); //command buffer overflow
-                    idx = 0; //start over
+                    s = "";
                 }
             }
 
     }
-
 }
+
 void TelnetServer::handler_uart(msg_t msg)
 {
     switch(msg){
@@ -152,5 +162,4 @@ void TelnetServer::handler_uart(msg_t msg)
             len = m_serial.readBytes(buf, 128);
             if(len) m_client.write(buf, len);
     }
-
 }

@@ -61,33 +61,23 @@ void help(WiFiClient& client)
             commands[ii].cmd, commands[i].help ? commands[i].help : commands[i].cmd
         );
     }
-    client.printf("\n$ ");
 }
-void bad(WiFiClient& client){ client.printf("unknown command\n\n$ "); }
+void bad(WiFiClient& client){ client.printf("unknown command\n\n"); }
 
 //=============================================================================
-// process incoming buffer passed from telnet function (will be 0 terminated)
+// process incoming command passed from telnet function (already trimmed)
 //=============================================================================
-bool Commander::process(WiFiClient& client, uint8_t* buf)
+void Commander::process(WiFiClient& client, String s)
 {
-    int end = 0;
-    for(; buf[end] >= 32 && buf[end] <= 126; end++); //want only 32-126
-    if(not buf[end]) return false; //found 0 terminator
-    if(buf[end] != '\r' && buf[end] != '\n') return true; //not cr or lf
-    buf[end] = 0; //0 terminate at cr/lf
-
-    String s{(char*)buf};
-    s.trim(); //removed leading/trailing space
-
     //check for root command
     for(auto i = 0; commands[i].func || commands[i].cmd; i++){
         if(commands[i].func) continue; //only looking for root command
         if(not s.startsWith(commands[i].cmd)) continue; //no match
         //root command found
         s.replace(commands[i].cmd, ""); //remove command string
-        if(s[0] != ' '){ help(client); return true;  } //no space after command
+        if(s[0] != ' '){ help(client); return;  } //no space after command
         s.trim();
-        if(not s[0]){ help(client); return true; } //unfinshed command
+        if(not s[0]){ help(client); return; } //unfinshed command
         //check for sub command
         for(i++; commands[i].func; i++){
             if(not s.startsWith(commands[i].cmd)) continue;
@@ -96,16 +86,13 @@ bool Commander::process(WiFiClient& client, uint8_t* buf)
             s.trim();
             //run command
             commands[i].func(client, s);
-            client.printf("$ ");
-            return true;
+            return;
         }
         //bad subcommand
         help(client);
-        return true;
     }
 
     bad(client);
-    return true; //clear buffer and start over
 }
 
 //=============================================================================

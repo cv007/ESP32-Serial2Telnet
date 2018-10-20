@@ -108,16 +108,17 @@ void setup()
     }
 
     bool found1 = false;
+    Serial.printf("adding wifi credentials from nvs storage...");
     for( uint8_t i = 0; i < wifidata.maxn(); i++ ){
         String s = wifidata.ssid(i);
         String p = wifidata.pass(i);
         if(not s.length()) continue; //if ssid blank, skip
-        printf("adding wifi credentials from nvs storage...\n  %s  %s\n", &s[0], &p[0]);
         wifiMulti.addAP(&s[0], &p[0]);
+        Serial.printf("[%d] ",i);
         found1 = true;
     }
     if(not found1){
-        Serial.printf("no wifi credentials found in nvs storage\n");
+        Serial.printf("none found\n");
         ap_mode();
     }
     Serial.printf("\n");
@@ -125,23 +126,23 @@ void setup()
     //set hostname if stored
     String hn = wifidata.hostname();
     if(hn.length()){
-        Serial.printf("setting hostname...%s\n\n", hn.c_str());
+        Serial.printf("setting hostname...%s\n", hn.c_str());
         WiFi.setHostname(hn.c_str());
     }
 
     Serial.printf("connecting wifi...");
     for(int i = 10; i > 0; delay(1000), i--){
-        if(wifiMulti.run() != WL_CONNECTED){
-            Serial.printf("%d.", i);
-            continue;
-        }
-        Serial.printf("connected [%s]\n", WiFi.localIP().toString().c_str());
-        break;
+        Serial.printf(" * ", i);
+        if(wifiMulti.run() == WL_CONNECTED) break;
     }
-
     Serial.printf("\n");
-    if(wifiMulti.run() != WL_CONNECTED){
-        Serial.printf("connect failed\n");
+
+    if(wifiMulti.run() == WL_CONNECTED){
+        Serial.printf("connected to SSID: %s   client IP: %s\n\n",
+            WiFi.SSID().c_str(), WiFi.localIP().toString().c_str()
+        );
+    } else {
+        Serial.printf("connect failed, restarting in 10 seconds...\n\n");
         delay(10000);
         ESP.restart(); //for now, just reboot and start over
     }
@@ -156,9 +157,13 @@ void loop()
 {
     //check if connection lost
     if(wifiMulti.run() != WL_CONNECTED){
-        Serial.printf("wifi connection lost :(\n");
-        delay(10000);
-        ESP.restart(); //for now, just reboot and start over
+        Serial.printf("wifi connection lost, attempting to reconnect...\n");
+        //try for 20 times (1 second interval), if failed just reset esp)
+        for(auto i = 0; ; delay(1000), i++){
+            if(wifiMulti.run() == WL_CONNECTED) break;
+            if(i > 20) ESP.restart();
+        }
+        Serial.printf("connected [%s]\n", WiFi.localIP().toString().c_str());
     }
 
     //let each server check client connections/data
@@ -167,7 +172,7 @@ void loop()
 
     //check switch
     if(boot_sw.long_press()){
-        Serial.printf("BOOT switch long press\n");
+        Serial.printf("BOOT switch long press, booting into AP mode...\n");
         telnet_info.stop();
         telnet_uart.stop();
         WifiCredentials wifidata;
