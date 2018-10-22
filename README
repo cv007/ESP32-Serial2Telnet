@@ -1,10 +1,10 @@
 ESP32-Wroom-32D
 
 bare module, created 'dev board' (not pretty)
-
+![Screenshot](snap3.jpg)
 connected to Pic32mm USB Curiosity board tx/rx
 communicate with board using telnet instead of using a usb-serial adapter (one less usb device to connect)
 me(telnet)->esp32->curiosity board(uart)
-
+![Screenshot](esp32-telnet-serial.png)
 
 
