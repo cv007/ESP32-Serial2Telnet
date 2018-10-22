@@ -1,5 +1,6 @@
 #include "TelnetServer.hpp"
 #include "Commander.hpp"
+#include "NvsSettings.hpp"
 
 //=====================
 // local functions
@@ -29,7 +30,7 @@ TelnetServer::TelnetServer(int port, const char* nam, serve_t typ)
     m_serial(typ == TelnetServer::SERIAL0 ? Serial :
              typ == TelnetServer::SERIAL1 ? Serial1 :
              typ == TelnetServer::SERIAL2 ? Serial2 :
-             Serial) //INFO will set as Serial, but will be unused
+             Serial) //INFO will set as Serial, unused
 {
 }
 
@@ -75,15 +76,17 @@ void TelnetServer::check()
             handler(START);                     //call handler
         }
     }
-    if(not m_client && m_client_connected) stop_client(); //print message
 
-    //check handler
-    handler(CHECK);
+    //check handler if have client
+    if(m_client) handler(CHECK);
+    //else no client, so stop if not already done
+    else if(m_client_connected) stop_client();
 }
 
+//if handler called with START/CHECK, m_client must be true
+//if called with STOP, m_client is false, so no using m_client in STOP
 void TelnetServer::handler(msg_t msg)
 {
-    if(not m_client) return;
     if(m_serve_type == INFO) handler_info(msg);
     else handler_uart(msg);
 }
@@ -92,23 +95,18 @@ void TelnetServer::handler_info(msg_t msg)
 {
     switch(msg){
         case START:
-            m_client.printf("\nConnected to info port\n\n$ ");
+            m_client.printf("\nConnected to info port %d (type ? for help)\n\n$ ", m_port);
             break;
         case STOP:
             break;
         case CHECK:
-            //check client for data
-
-            //my telnet client seems to only send after a cr/lf
-            //not sure what other telnet clients do
-
-           static String s;
-           static const auto maxcmd_len = 127;
-           size_t len = m_client.available();
+            static String s;
+            static const auto maxlen = 127;
+            size_t len = m_client.available();
             if(len){
                 char c = 0;
                 //read up to len bytes, while less than max cmd size
-                for(; len && s.length() < maxcmd_len; len--){
+                for(; len && s.length() < maxlen; len--){
                     c = m_client.read(); //get 1 byte
                     if(c >= ' '){ s += c; continue; } //if a char, add and keep going
                     if(c == '\r' || c == '\n') break; //found command end
@@ -126,12 +124,12 @@ void TelnetServer::handler_info(msg_t msg)
                     }
                 }
                 //if too many chars
-                if(s.length() >= maxcmd_len){
+                if(s.length() >= maxlen){
                     m_client.printf("\n\ncommand too long :(\n\n$ "); //command buffer overflow
                     s = "";
                 }
             }
-
+            break;
     }
 }
 
@@ -139,11 +137,13 @@ void TelnetServer::handler_uart(msg_t msg)
 {
     switch(msg){
         case START:
+//Serial.printf("%s START\n",__FUNCTION__);
+            m_serial.begin(m_baud, m_config, m_rxpin, m_txpin, m_txrx_invert);
             //set serial timeout for reads
-            m_serial.begin(230400);
             m_serial.setTimeout(0);
             break;
         case TelnetServer::STOP:
+//Serial.printf("%s STOP\n",__FUNCTION__);
             m_serial.end();
             break;
         case TelnetServer::CHECK:
@@ -154,12 +154,18 @@ void TelnetServer::handler_uart(msg_t msg)
             //max 5.5ms- 230400baud/128chars, max 11ms 115200baud/128chars
             len = m_client.available();
             if(len){
+//Serial.printf("%s CHECK telnet %d bytes\n",__FUNCTION__, len);
                 if(len > 128) len = 128;
                 m_client.read(buf, len);
                 m_serial.write(buf, len);
             }
             //check UART for data, push it out to telnet
             len = m_serial.readBytes(buf, 128);
-            if(len) m_client.write(buf, len);
+            if(len){
+//Serial.printf("%s CHECK uart2 %d bytes\n",__FUNCTION__, len);
+                m_client.write(buf, len);
+            }
+            break;
     }
 }
+

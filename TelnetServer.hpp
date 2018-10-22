@@ -9,6 +9,7 @@ struct TelnetServer {
 
     public:
 
+    //currently only using SERIAL2 and INFO
     typedef enum { SERIAL0, SERIAL1, SERIAL2, INFO } serve_t;
 
     //port, name, handler, type
@@ -34,6 +35,15 @@ struct TelnetServer {
     IPAddress       m_client_ip;
     serve_t         m_serve_type;
     HardwareSerial& m_serial;
+
+    //TODO: add code to be able to change these settings (via info port)
+    uint32_t        m_baud{230400};
+    uint32_t        m_config{SERIAL_8N1};
+    int8_t          m_rxpin{-1};
+    int8_t          m_txpin{-1};
+    bool            m_txrx_invert{false};
+
+
 };
 
 //TODO

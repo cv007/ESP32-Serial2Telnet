@@ -1,5 +1,8 @@
 #include "Commander.hpp"
-#include "WifiCredentials.hpp"
+#include "NvsSettings.hpp"
+#include "TelnetServer.hpp"
+
+extern TelnetServer telnet_info;
 
 //=============================================================================
 // commands
@@ -28,19 +31,21 @@ typedef struct {
 } cmd_t;
 
 static cmd_t commands[] = {
+        { "?",          NULL,           NULL }, //will force help
+        { "help",       NULL,           NULL }, //will force help
         { "sys",        NULL,           NULL },
-        {   "boot",     sys_boot,       "boot | boot=AP | boot=STA" },
+        {   "boot",     sys_boot,       "<boot | boot=AP | boot=STA>" },
         {   "reboot",   sys_reboot,     NULL },
-        {   "erase all",sys_erase_all,  NULL   },
+        {   "erase all",sys_erase_all,  NULL },
 
         { "wifi",       NULL,           NULL },
         {   "list",     wifi_list,      NULL },
-        {   "add",      wifi_add,       "add # ssid=ssidname | add # pass=password" },
+        {   "add",      wifi_add,       "add # <ssid=ssidname | pass=password>" },
         {   "erase",    wifi_erase,     "erase #" },
 
         { "net",        NULL,           NULL },
-        {   "hostname", net_hostname,   "hostname | hostname=myname" },
-        {   "APname",   net_APname,     "APname | APname=myapname" },
+        {   "hostname", net_hostname,   "<hostname | hostname=myname>" },
+        {   "APname",   net_APname,     "<APname | APname=myapname>" },
         {   "mac",      net_mac,        NULL },
 
         { NULL,         NULL }              //end of table
@@ -103,18 +108,18 @@ static void sys_boot(WiFiClient& client, String s)
 {
     //no args
     if(not s[0]){
-        WifiCredentials wifidata;
-        client.printf("boot: %s\n", wifidata.boot() ? "AP" : "STA");
+        NvsSettings settings;
+        client.printf("boot: %s\n", settings.boot() ? "AP" : "STA");
     }
     //=AP
     else if(s.startsWith("=AP")){
-        WifiCredentials wifidata;
-        wifidata.boot(wifidata.AP);
+        NvsSettings settings;
+        settings.boot(settings.AP);
     }
     //=STA
     else if(s.startsWith("=STA")){
-        WifiCredentials wifidata;
-        wifidata.boot(wifidata.STA);
+        NvsSettings settings;
+        settings.boot(settings.STA);
     }
     else help(client);
 }
@@ -131,22 +136,22 @@ static void sys_erase_all(WiFiClient& client, String s)
 {
     if(s[0]){ bad(client); return; }
     client.printf("erasing all stored data...");
-    WifiCredentials wifidata;
-    wifidata.erase_all();
+    NvsSettings settings;
+    settings.erase_all();
     client.printf("done.\n");
 }
 //wifi list
 static void wifi_list(WiFiClient& client, String s)
 {
     if(s[0]){ bad(client); return; }
-    WifiCredentials wifidata;
-    int max = wifidata.maxn();
+    NvsSettings settings;
+    int max = settings.wifimaxn();
     int maxslen = 0;
     int maxplen = 0;
     //get max len of chars for each field
     for( auto i = 0; i < max; i++ ){
-        int s = wifidata.ssid(i).length();
-        int p = wifidata.pass(i).length();
+        int s = settings.ssid(i).length();
+        int p = settings.pass(i).length();
         if(s > maxslen) maxslen = s;
         if(p > maxplen) maxplen = p;
     }
@@ -157,7 +162,7 @@ static void wifi_list(WiFiClient& client, String s)
     client.printf("\n");
     for( auto i = 0; i < max; i++ ){
         client.printf(fmt.c_str(),
-            i, wifidata.ssid(i).c_str(), wifidata.pass(i).c_str()
+            i, settings.ssid(i).c_str(), settings.pass(i).c_str()
         );
     }
 }
@@ -165,7 +170,7 @@ static void wifi_list(WiFiClient& client, String s)
 static void wifi_add(WiFiClient& client, String s)
 {
     //"0 ssid=myssid"
-    WifiCredentials wifidata;
+    NvsSettings settings;
     //"0 ssid=myssid"
     //"0 pass=mypass"
     int idx = 0;
@@ -176,18 +181,18 @@ static void wifi_add(WiFiClient& client, String s)
             return;
         }
     }
-    if(idx > wifidata.maxn()){
-        client.printf("index# is out of range (max %s)\n", wifidata.maxn());
+    if(idx > settings.wifimaxn()){
+        client.printf("index# is out of range (max %s)\n", settings.wifimaxn());
         return;
     }
     int si = s.indexOf("ssid=");
     if(si > 0){
-        wifidata.ssid(idx, &s[si+5]);
+        settings.ssid(idx, &s[si+5]);
         return;
     }
     si = s.indexOf("pass=");
     if(si > 0){
-        wifidata.pass(idx, &s[si+5]);
+        settings.pass(idx, &s[si+5]);
         return;
     }
     help(client);
@@ -206,34 +211,34 @@ static void wifi_erase(WiFiClient& client, String s)
             return;
         }
     }
-    WifiCredentials wifidata;
-    if(idx > wifidata.maxn()){
+    NvsSettings settings;
+    if(idx > settings.wifimaxn()){
         client.printf("index# is out of range\n");
         return;
     }
-    wifidata.ssid(idx, "");
-    wifidata.pass(idx, "");
+    settings.ssid(idx, "");
+    settings.pass(idx, "");
 }
 //net hostname
 static void net_hostname(WiFiClient& client, String s)
 {
     //no arg
     if(not s[0]){
-        WifiCredentials wifidata;
+        NvsSettings settings;
         client.printf("hardware: %s  stored: %s\n",
-            WiFi.getHostname(), wifidata.hostname().c_str()
+            WiFi.getHostname(), settings.hostname().c_str()
         );
         return;
     }
     //=myname
     if(s[0] == '='){
-        WifiCredentials wifidata;
+        NvsSettings settings;
         s = s.substring(1);
         if(s.length() > 32){
             client.printf("hostname too long (32 chars max)\n");
             return;
         }
-        wifidata.hostname(s); //nvs storage
+        settings.hostname(s); //nvs storage
         WiFi.setHostname(s.c_str()); //and out to tcpip (may not see until reboot)
         return;
     }
@@ -244,19 +249,19 @@ static void net_APname(WiFiClient& client, String s)
 {
     //no arg
     if(not s[0]){
-        WifiCredentials wifidata;
-        client.printf("%s\n", wifidata.APname().c_str());
+        NvsSettings settings;
+        client.printf("%s\n", settings.APname().c_str());
         return;
     }
     //=myAPname
     if(s[0] == '='){
-        WifiCredentials wifidata;
+        NvsSettings settings;
         s = s.substring(1);
         if(s.length() > 32){
             client.printf("APname too long (32 chars max)\n");
             return;
         }
-        wifidata.APname(s); //nvs storage
+        settings.APname(s); //nvs storage
         return;
     }
     help(client);
