@@ -57,6 +57,20 @@ void TelnetServer::stop_client()
     handler(STOP);                              //call handler
 }
 
+void TelnetServer::status(WiFiClient& client)
+{
+    //Telnet Server |  uart2 | s192.168.123.100 | p   23 | c                | waiting
+    //Telnet Server |  uart2 | s192.168.123.100 | p   23 | c                | stopped
+    //Telnet Server |  uart2 | s192.168.123.100 | p   23 | c192.168.123.101 | connected
+    client.printf("Telnet Server | %5s | s%15s | p%5d | c%15s | %s\n",
+        m_name,
+        WiFi.localIP().toString().c_str(),
+        m_port,
+        m_client_connected ? m_client_ip.toString().c_str() : "",
+        m_server ? m_client_connected ? "connected" : "waiting" : "stopped"
+    );
+}
+
 void TelnetServer::check()
 {
     //check for new clients, dropped clients

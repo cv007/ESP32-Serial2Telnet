@@ -3,6 +3,7 @@
 #include "TelnetServer.hpp"
 
 extern TelnetServer telnet_info;
+extern TelnetServer telnet_uart2;
 
 //=============================================================================
 // commands
@@ -19,6 +20,7 @@ static void wifi_erase(WiFiClient&, String);
 static void net_hostname(WiFiClient&, String);
 static void net_APname(WiFiClient&, String);
 static void net_mac(WiFiClient&, String);
+static void net_status(WiFiClient&, String);
 
 //=============================================================================
 // command list - name:function
@@ -47,6 +49,7 @@ static cmd_t commands[] = {
         {   "hostname", net_hostname,   "<hostname | hostname=myname>" },
         {   "APname",   net_APname,     "<APname | APname=myapname>" },
         {   "mac",      net_mac,        NULL },
+        {   "status",   net_status,     NULL },
 
         { NULL,         NULL }              //end of table
 };
@@ -273,3 +276,10 @@ static void net_mac(WiFiClient& client, String s)
     client.printf("%s\n", WiFi.macAddress().c_str());
 }
 
+//net status
+static void net_status(WiFiClient& client, String s)
+{
+    if(s[0]){ help(client); return;  }
+    telnet_info.status(client);
+    telnet_uart2.status(client);
+}

@@ -14,19 +14,20 @@
                 -to go into bootloader mode, short pin to ground, press reset switch
 
   connectoions-
-    uart0 - programming connector (also used for esp32 programming)
+    uart0 - programming connector (used for esp32 programming, debug output)
     uart2 - programming connector
 
 
   initial setup- (initial firmware loaded)
         power on
             delay 5 seconds
+
             if boot flag on OR no wifi credentials stored-
                 start access point mode with telnet info port 2300 in use
                 boot flag is cleared
 
             try to connect to available wifi access points using stored credentials
-                if unable, keep trying
+                if unable, keep trying for a period of time, then reset
                 telnet port 2300 = info
                 telnet port 2302 = uart2
 
@@ -35,7 +36,7 @@
 
             if in access point mode-
                 can connect to info on port 2300 to enter wifi credentials using console commands
-                if boot pin shorted to ground > 3 sec, reboot (or use reboot command via telnet)
+                reboot via reset switch (or use reboot command via telnet)
 
 
 
@@ -63,38 +64,33 @@ TelnetServer telnet_info(2300, "info", TelnetServer::INFO);
 TelnetServer telnet_uart2(2302, "uart2", TelnetServer::SERIAL2);
 
 
-//start access point, telnet server port 2300
+//start access point, start telnet info server port 2300
 //to access- telnet 192.168.4.1 2300
 //then run commands (mainly to set wifi credentials)
 //port 2302 not active
 void ap_mode(){
     //led blink fast
 
+    Serial.printf("\n");
     for(int i = 5; i > 0; Serial.printf("startup delay %d\n", i), delay(1000), i--);
-    Serial.printf("\n\n");
+    Serial.printf("\nstarting access point...");
 
     NvsSettings settings;
-    Serial.printf("\nstarting access point...");
     String APname = settings.APname();
     if(APname.length() == 0) APname = "SNAP-AP";
+
     WiFi.softAP(APname.c_str());
-    TelnetServer telnet_ap(2300, "apinfo", TelnetServer::INFO);
+    TelnetServer telnet_ap(2300, "info", TelnetServer::INFO);
     Serial.printf("%s\n\n",WiFi.softAPIP().toString().c_str());
+
     delay(5000);
     telnet_ap.start();
     for(;;){
         telnet_ap.check();
-        //check switch
-        if(boot_sw.long_press()){
-            //led blink 5, then off
-            Serial.printf("BOOT switch pressed, rebooting...\n");
-            delay(2000);
-            while(boot_sw.down());
-            telnet_ap.stop();
-            ESP.restart();
-        }
     }
 }
+
+
 
 
 //one time setup
@@ -185,6 +181,7 @@ void loop()
     //let each server check client connections/data
     telnet_info.check();
     telnet_uart2.check();
+
 
     //check switch
     if(boot_sw.long_press()){

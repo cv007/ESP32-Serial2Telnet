@@ -18,6 +18,7 @@ struct TelnetServer {
     void start();
     void stop();
     void check();
+    void status(WiFiClient&);
 
     private:
 
