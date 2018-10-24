@@ -118,6 +118,8 @@ void TelnetServer::handler_info(msg_t msg)
             static const auto maxlen = 127;
             size_t len = m_client.available();
             if(len){
+                //TODO a single read of bytes may be slow, check it out
+                //     (but is easier as we can stop when we reach < space char)
                 char c = 0;
                 //read up to len bytes, while less than max cmd size
                 for(; len && s.length() < maxlen; len--){

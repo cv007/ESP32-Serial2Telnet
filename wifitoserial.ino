@@ -5,13 +5,13 @@
     green - on = connected to wifi
             blinking slow = trying to connect to wifi
             blinkng fast = access point mode
-            5 blinks, then off = boot to ap mode triggered (now remove short from boot pin)
+            5 blinks, then off = boot to ap mode triggered (now release boot switch)
 
   buttons-
-    reset_sw    reset switch (case protruding)
-    boot_sw     short boot pin on programming connector to ground (middle pin in each row)
-                -to go into access point mode, short pin to ground
-                -to go into bootloader mode, short pin to ground, press reset switch
+    sw_reset    reset switch
+    sw_boot     boot switch
+                -to go into access point mode, press/hold boot switch
+                -to go into bootloader mode, press/hold boot switch, press reset switch
 
   connectoions-
     uart0 - programming connector (used for esp32 programming, debug output)
@@ -23,7 +23,7 @@
             delay 5 seconds
 
             if boot flag on OR no wifi credentials stored-
-                start access point mode with telnet info port 2300 in use
+                start access point mode with only telnet info port 2300 enabled
                 boot flag is cleared
 
             try to connect to available wifi access points using stored credentials
@@ -31,8 +31,8 @@
                 telnet port 2300 = info
                 telnet port 2302 = uart2
 
-            if boot pin shorted to ground >3 sec, reboot to access point mode
-                after removing short, the esp will reboot
+            if boot switch pressed >3 sec, reboot to access point mode
+                after releasing switch, the esp will reboot
 
             if in access point mode-
                 can connect to info on port 2300 to enter wifi credentials using console commands
@@ -54,8 +54,14 @@
 #include "Commander.hpp"
 
 
-//boot_sw (IO0) long press = run wifi access point
+//sw_boot (IO0) long press = run wifi access point
 #include "Button.hpp"
+Button sw_boot(0);
+
+//status led (IO23)
+#include "LedStatus.hpp"
+LedStatus led_wifi;
+
 
 WiFiMulti wifiMulti;
 
@@ -64,12 +70,15 @@ TelnetServer telnet_info(2300, "info", TelnetServer::INFO);
 TelnetServer telnet_uart2(2302, "uart2", TelnetServer::SERIAL2);
 
 
+
+
 //start access point, start telnet info server port 2300
 //to access- telnet 192.168.4.1 2300
 //then run commands (mainly to set wifi credentials)
 //port 2302 not active
 void ap_mode(){
     //led blink fast
+    led_wifi.fast();
 
     Serial.printf("\n");
     for(int i = 5; i > 0; Serial.printf("startup delay %d\n", i), delay(1000), i--);
@@ -91,11 +100,12 @@ void ap_mode(){
 }
 
 
-
-
 //one time setup
 void setup()
 {
+    //start led status, default settings (IO23)
+    led_wifi.init();
+
     //debug ouput
     Serial.begin(115200);
 
@@ -135,6 +145,7 @@ void setup()
     }
 
     //led blink slow
+    led_wifi.slow();
 
     for(int i = 10; i > 0; delay(1000), i--){
         Serial.printf("connecting wifi...%d\n", i);
@@ -146,12 +157,14 @@ void setup()
             WiFi.SSID().c_str(), WiFi.localIP().toString().c_str()
         );
         //led on
+        led_wifi.on();
     } else {
         Serial.printf("connect failed, restarting in 10 seconds...\n\n");
         delay(10000);
         ESP.restart(); //for now, just reboot and start over
     }
 
+    delay(3000);
     //start the servers
     telnet_info.start();
     telnet_uart2.start();
@@ -162,11 +175,15 @@ void loop()
 {
     //check if connection lost
     if(wifiMulti.run() != WL_CONNECTED){
+        led_wifi.slow();
         Serial.printf("wifi connection lost, attempting to reconnect...\n");
         //try for 20 times (1 second interval), if failed just reset esp)
         for(auto i = 20; ; delay(1000), i--){
             Serial.printf("connecting wifi...%d\n", i);
-            if(wifiMulti.run() == WL_CONNECTED) break;
+            if(wifiMulti.run() == WL_CONNECTED){
+                led_wifi.on();
+                break;
+            }
             if(i == 0){
                 Serial.printf("connect failed, restarting in 10 seconds...\n\n");
                 delay(10000);
@@ -184,16 +201,22 @@ void loop()
 
 
     //check switch
-    if(boot_sw.long_press()){
+    if(sw_boot.long_press()){
         Serial.printf("BOOT switch long press, booting into AP mode...\n");
         telnet_info.stop();
         telnet_uart2.stop();
         NvsSettings settings;
         settings.boot(settings.AP);
-        //led blink 5, then off
+        //led blink fast 2sec, then off 2sec
         //wait for release so sw is not pressed when rebooted
         //which would then boot into bootloader
-        while(boot_sw.down());
+        uint8_t t = 0;
+        while(t++, delay(100), sw_boot.down()){
+            if(t == 1) led_wifi.fast();   //1-20 (2sec) = fast
+            if(t > 20) led_wifi.off();    //21-40 (2sec) = off
+            if(t > 40) t = 0;               //start over
+
+        }
         ESP.restart();
     }
 }
