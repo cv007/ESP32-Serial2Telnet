@@ -24,6 +24,7 @@
   net APname                    //show APname (ssid name for access point mode)
   net APname=myAPname           //set APname (max 32 chars)
   net mac                       //show mac address
+  net status                    //show telnet servers status
 */
 
 struct Commander {

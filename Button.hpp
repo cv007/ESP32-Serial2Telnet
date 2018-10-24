@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Arduino.h"
+#include <stdint.h>
 
 struct Button {
 
     //provide IO#, assume pullup wanted, and high=off, low=on
-    //also provide long press time in ms if wanted (default is 2sec)
+    //also provide long press time in ms for other than default 3000ms
     Button(uint8_t pin, uint16_t = 3000);
 
     //returns pressed time in ms

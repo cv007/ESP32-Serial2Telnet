@@ -33,8 +33,8 @@ typedef struct {
 } cmd_t;
 
 static cmd_t commands[] = {
-        { "?",          NULL,           NULL }, //will force help
-        { "help",       NULL,           NULL }, //will force help
+        { "?",          NULL,           "(help)" },
+        { "help",       NULL,           "(you are here)" },
         { "sys",        NULL,           NULL },
         {   "boot",     sys_boot,       "<boot | boot=AP | boot=STA>" },
         {   "reboot",   sys_reboot,     NULL },
@@ -63,6 +63,11 @@ void help(WiFiClient& client)
     for(auto i = 0, ii = 0; commands[i].cmd != NULL; i++){
         if(commands[i].func == NULL){
             ii = i; //save root command index
+            if(commands[i+1].func) continue; //if next command has func, no print
+            //else is a root command with no options
+            client.printf("  %s %s\n",
+                commands[i].cmd, commands[i].help ? commands[i].help : commands[i].cmd
+            );
             continue; //don't print root command
         }
         client.printf("  %s %s\n",

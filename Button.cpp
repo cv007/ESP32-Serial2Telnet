@@ -1,4 +1,5 @@
 #include "Button.hpp"
+#include "Arduino.h" //pin stuff
 
 Button::Button(uint8_t pin, uint16_t ms)
 : m_pin(pin), m_lastms(0), m_prev_state(UP), m_long_ms(ms)

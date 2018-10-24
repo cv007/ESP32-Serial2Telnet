@@ -55,7 +55,4 @@ bool NvsSettings::clear(){              return m_settings.clear(); }
 bool NvsSettings::boot(){               return m_settings.getBool("boot", STA); }
 size_t NvsSettings::boot(bool tf){      return m_settings.putBool("boot", tf); }
 
-bool NvsSettings::debug(){              return m_settings.getBool("debug", 0); }
-size_t NvsSettings::debug(bool tf){     return m_settings.putBool("debug", tf); }
-
 bool NvsSettings::erase_all(){ return m_settings.clear(); }

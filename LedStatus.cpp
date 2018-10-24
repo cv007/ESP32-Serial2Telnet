@@ -1,17 +1,35 @@
 #include "LedStatus.hpp"
-#include "Arduino.h"
+#include "Arduino.h" //pin stuff
 
+//10Hz timer0 irq- calls led_update
+//if count exceeds count max, toggle pin (unless count max is 0)
+//count max determines length of led state (in 1/10sec increments),
+
+//local enum- on/off time in 1/10sec
+//slow = 10 = 1.0sec on, 1.0sec off
+//fast = 2 = 0.2sec on, 0.2sec off
+enum { OFF, ON = 0, SLOW = 10, FAST = 2 };
+
+//local vars
 uint8_t             m_pin = 255;
 bool                m_invert;
 uint8_t             m_count;
-uint8_t             m_count_max = 20; //2 seconds
+uint8_t             m_count_max;
 hw_timer_t*         m_timer0 = NULL;
 
-void pin_on(){ digitalWrite(m_pin, !m_invert); }
-void pin_off(){ digitalWrite(m_pin, m_invert); }
+//local functions
+void IRAM_ATTR led_update()
+{
+    if(m_count_max == 0) return;    //do not toggle if 0
+    if(m_count++ >= m_count_max){   //count 0-m_count_max
+        m_count = 0;                //reset count
+        digitalWrite(m_pin, !digitalRead(m_pin));
+    }
+}
+void reset_max(uint8_t max){ m_count_max = max; m_count = 0; }
 
-void IRAM_ATTR led_update();
 
+//class functions (all functions static)
 void LedStatus::init(uint8_t pin, bool invert)
 {
     m_pin = pin;
@@ -25,16 +43,9 @@ void LedStatus::init(uint8_t pin, bool invert)
     timerAlarmWrite(m_timer0, 100000, true); //1000000/100000= 10Hz, true=auto reload
     timerAlarmEnable(m_timer0);
 }
-void LedStatus::on(){ m_count_max = 0; m_count = 0; pin_on(); }
-void LedStatus::off(){ m_count_max = 0; m_count = 0; pin_off(); }
-void LedStatus::slow(){ m_count_max = 10; m_count = 0; }
-void LedStatus::fast(){ m_count_max = 2; m_count = 0; }
+void LedStatus::on(){   reset_max(ON); digitalWrite(m_pin, !m_invert); }
+void LedStatus::off(){  reset_max(OFF); digitalWrite(m_pin, m_invert); }
+void LedStatus::slow(){ reset_max(SLOW); }
+void LedStatus::fast(){ reset_max(FAST); }
 
 
-void IRAM_ATTR led_update() {
-    if(m_count_max == 0) return; //OFF or ON, do not toggle
-    if(m_count++ >= m_count_max){
-        m_count = 0; //count 0-m_count_max
-        digitalWrite(m_pin, !digitalRead(m_pin));
-    }
-}
