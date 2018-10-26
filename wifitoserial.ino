@@ -156,8 +156,6 @@ void setup()
         Serial.printf("connected to SSID: %s   client IP: %s\n\n",
             WiFi.SSID().c_str(), WiFi.localIP().toString().c_str()
         );
-        //led on
-        led_wifi.on();
     } else {
         Serial.printf("connect failed, restarting in 10 seconds...\n\n");
         delay(10000);
@@ -165,6 +163,8 @@ void setup()
     }
 
     delay(3000);
+    //led on - is connected
+    led_wifi.on();
     //start the servers
     telnet_info.start();
     telnet_uart2.start();

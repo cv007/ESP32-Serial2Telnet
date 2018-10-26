@@ -118,8 +118,6 @@ void TelnetServer::handler_info(msg_t msg)
             static const auto maxlen = 127;
             size_t len = m_client.available();
             if(len){
-                //TODO a single read of bytes may be slow, check it out
-                //     (but is easier as we can stop when we reach < space char)
                 char c = 0;
                 //read up to len bytes, while less than max cmd size
                 for(; len && s.length() < maxlen; len--){
@@ -153,13 +151,11 @@ void TelnetServer::handler_uart(msg_t msg)
 {
     switch(msg){
         case START:
-//Serial.printf("%s START\n",__FUNCTION__);
             m_serial.begin(m_baud, m_config, m_rxpin, m_txpin, m_txrx_invert);
             //set serial timeout for reads
             m_serial.setTimeout(0);
             break;
         case TelnetServer::STOP:
-//Serial.printf("%s STOP\n",__FUNCTION__);
             m_serial.end();
             break;
         case TelnetServer::CHECK:
@@ -170,7 +166,6 @@ void TelnetServer::handler_uart(msg_t msg)
             //max 5.5ms- 230400baud/128chars, max 11ms 115200baud/128chars
             len = m_client.available();
             if(len){
-//Serial.printf("%s CHECK telnet %d bytes\n",__FUNCTION__, len);
                 if(len > 128) len = 128;
                 m_client.read(buf, len);
                 m_serial.write(buf, len);
@@ -178,7 +173,6 @@ void TelnetServer::handler_uart(msg_t msg)
             //check UART for data, push it out to telnet
             len = m_serial.readBytes(buf, 128);
             if(len){
-//Serial.printf("%s CHECK uart2 %d bytes\n",__FUNCTION__, len);
                 m_client.write(buf, len);
             }
             break;

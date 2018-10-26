@@ -49,3 +49,44 @@ void LedStatus::slow(){ reset_max(SLOW); }
 void LedStatus::fast(){ reset_max(FAST); }
 
 
+/*
+
+TODO
+blink IP address (last digit)
+
+off 2sec
+2sec between digits
+0 is short blink 0.1sec on
+1-9 is 0.3sec on, 0.3sec off
+
+blink ip address- last number
+001 - 254
+
+hundreds digit 0-2
+tens digit 0-9 or 0-5 when hundreds is 2
+ones digit 0-9
+
+. = 0.1sec
+_ = off 2sec
+* = 0.3sec on
+~ = 0.3sec off
+
+009=
+_._._*~*~*~*~*~*~*~*~*~_
+
+023=
+_._*~*~_*~*~*~_
+
+254=
+_*~*~_*~*~*~*~*~_*~*~*~*~_
+
+uint8_t hun = WiFi.localIP()[3]
+uint8_t ten = hun/10%10;    //254/10=25 25%10=5
+uint8_t one = hun%10;       //254%10=4
+hun /= 100;                 //254/100=2
+
+
+
+
+
+*/
