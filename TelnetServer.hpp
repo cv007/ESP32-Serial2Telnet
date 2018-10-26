@@ -13,10 +13,9 @@ struct TelnetServer {
     void stop           ();
     void check          ();
     void status         (WiFiClient&);
+    void stop_client    ();
 
     private:
-
-    void stop_client    ();
 
     typedef enum : uint8_t { START, CHECK, STOP } msg_t;
     void handler        (msg_t);

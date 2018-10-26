@@ -35,6 +35,7 @@ typedef struct {
 static cmd_t commands[] = {
         { "?",          NULL,           "(help)" },
         { "help",       NULL,           "(you are here)" },
+        { "bye",        NULL,           "(close this connection)" },
         { "sys",        NULL,           NULL },
         {   "boot",     sys_boot,       "<boot | boot=AP | boot=STA>" },
         {   "reboot",   sys_reboot,     NULL },
@@ -82,6 +83,11 @@ void bad(WiFiClient& client){ client.printf("unknown command\n\n"); }
 //=============================================================================
 void Commander::process(WiFiClient& client, String s)
 {
+    //can 'logoff' with bye
+    if(s == "bye"){
+        telnet_info.stop_client();
+        return;
+    }
     //check for root command
     for(auto i = 0; commands[i].func || commands[i].cmd; i++){
         if(commands[i].func) continue; //only looking for root command
