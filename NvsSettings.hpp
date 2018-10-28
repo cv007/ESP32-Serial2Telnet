@@ -10,8 +10,9 @@ struct NvsSettings {
 
     NvsSettings();
     String ssid(uint8_t);           //index -> ssid string (empty if none)
-    String pass(uint8_t);           //index -> pass string (empty if none)
     size_t ssid(uint8_t, String);   //index, ssid -> bytes written
+
+    String pass(uint8_t);           //index -> pass string (empty if none)
     size_t pass(uint8_t, String);   //index, pass -> bytes written
 
     String hostname();              //get hostname (used in STA mode)
@@ -24,18 +25,19 @@ struct NvsSettings {
 
     bool clear();                   //clear all nvs entries for this namespace
 
-    enum : bool { STA, AP };
+    using boot_t = enum : bool { STA, AP };
     bool boot();                    //get value to run AP or STA
-    size_t boot(bool);              //set value to run AP or STA
+    size_t boot(boot_t);            //set value to run AP or STA
 
     bool erase_all();               //erase all data in this namespace
 
 
     private:
+
     String gets(String, String);
     size_t puts(String, String);
     Preferences m_settings;
-    const uint8_t m_wifimaxn = 8;
+    const uint8_t m_wifimaxn = 8;   //limit to 8 ssid/pass
 
 };
 

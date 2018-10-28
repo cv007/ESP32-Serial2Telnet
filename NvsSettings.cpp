@@ -22,21 +22,22 @@ size_t NvsSettings::puts(String key, String s)
 }
 //
 
+
 String NvsSettings::ssid(uint8_t idx)
 {
     if(idx > m_wifimaxn) return {};
     return gets(String("ssid" + String(idx)), {});
 }
-String NvsSettings::pass(uint8_t idx)
-{
-    if(idx > m_wifimaxn) return {};
-    return gets(String("pass" + String(idx)), {});
-}
-
 size_t NvsSettings::ssid(uint8_t idx, String ssid)
 {
     if(ssid.length() > 31 || idx > m_wifimaxn) return 0;
     return puts(String("ssid" + String(idx)), ssid);
+}
+
+String NvsSettings::pass(uint8_t idx)
+{
+    if(idx > m_wifimaxn) return {};
+    return gets(String("pass" + String(idx)), {});
 }
 size_t NvsSettings::pass(uint8_t idx, String pass)
 {
@@ -53,6 +54,6 @@ size_t NvsSettings::APname(String s){   return puts(String("APname"), s); }
 bool NvsSettings::clear(){              return m_settings.clear(); }
 
 bool NvsSettings::boot(){               return m_settings.getBool("boot", STA); }
-size_t NvsSettings::boot(bool tf){      return m_settings.putBool("boot", tf); }
+size_t NvsSettings::boot(boot_t tf){    return m_settings.putBool("boot", tf); }
 
 bool NvsSettings::erase_all(){ return m_settings.clear(); }

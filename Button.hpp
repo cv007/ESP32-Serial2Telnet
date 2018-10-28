@@ -10,17 +10,16 @@ struct Button {
 
     //returns pressed time in ms
     //caller just calls as needed and processes the return value
-    uint16_t pressed();
-
-    bool down();
-    bool up();
-    bool long_press();
+    uint16_t    pressed     ();
+    bool        down        ();
+    bool        up          ();
+    bool        long_press  ();
 
     private:
 
     using state_t = enum : bool { DOWN, UP };
-    const uint8_t m_pin;
-    uint32_t m_lastms;
-    state_t m_prev_state;
-    uint16_t m_long_ms;
+    const uint8_t   m_pin;
+    uint32_t        m_lastms;
+    state_t         m_prev_state;
+    uint16_t        m_long_ms;
 };
