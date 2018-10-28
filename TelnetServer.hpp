@@ -4,7 +4,7 @@
 struct TelnetServer {
 
     //currently only using SERIAL2 and INFO
-    typedef enum { SERIAL0, SERIAL1, SERIAL2, INFO } serve_t;
+    using serve_t = enum { SERIAL0, SERIAL1, SERIAL2, INFO };
 
     //port, name, type
     TelnetServer        (int, const char*, serve_t);
@@ -17,7 +17,7 @@ struct TelnetServer {
 
     private:
 
-    typedef enum : uint8_t { START, CHECK, STOP } msg_t;
+    using msg_t = enum : uint8_t { START, CHECK, STOP };
     void handler        (msg_t);
     void handler_info   (msg_t);
     void handler_uart   (msg_t);

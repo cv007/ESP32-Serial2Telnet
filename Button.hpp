@@ -18,7 +18,7 @@ struct Button {
 
     private:
 
-    typedef enum : bool { DOWN, UP } state_t;
+    using state_t = enum : bool { DOWN, UP };
     const uint8_t m_pin;
     uint32_t m_lastms;
     state_t m_prev_state;

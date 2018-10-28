@@ -25,12 +25,12 @@ static void net_status(WiFiClient&, String);
 //=============================================================================
 // command list - name:function
 //=============================================================================
-typedef void(*cmdfunc_t)(WiFiClient&, String);
-typedef struct {
+using cmdfunc_t = void(*)(WiFiClient&, String);
+using cmd_t = struct {
     const char* cmd;
     cmdfunc_t func;
     const char* help;
-} cmd_t;
+};
 
 static cmd_t commands[] = {
         { "?",          NULL,           "(help)" },
