@@ -60,7 +60,7 @@ Button sw_boot(0);
 
 //status led (IO23)
 #include "LedStatus.hpp"
-LedStatus led_wifi;
+LedStatus led_wifi(23);
 
 
 WiFiMulti wifiMulti;
@@ -103,9 +103,6 @@ void ap_mode(){
 //one time setup
 void setup()
 {
-    //start led status, default settings (IO23)
-    led_wifi.init();
-
     //debug ouput
     Serial.begin(115200);
 
@@ -200,7 +197,7 @@ void loop()
     telnet_uart2.check();
 
 
-    //check switch
+    //check switch - long press to go into AP mode
     if(sw_boot.long_press()){
         Serial.printf("BOOT switch long press, booting into AP mode...\n");
         telnet_info.stop();

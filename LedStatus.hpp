@@ -4,16 +4,25 @@
 
 struct LedStatus {
 
-    //pin, invert? default= IO23, no invert (high=on)
-    static void init(uint8_t=23, bool=false);
+    //pin, invert? default= no invert (high=on)
+    LedStatus(uint8_t, bool=false);
 
     //set led state
-    static void on();
-    static void off();
-    static void slow();
-    static void fast();
+    void        on      ();
+    void        off     ();
+    void        slow    ();
+    void        fast    ();
+
+    //called from timer0 isr
+    void        update  ();
+
+    private:
+
+    uint8_t     m_pin;
+    bool        m_invert;
+    uint8_t     m_count;
+    uint8_t     m_count_max;
 
 };
-
 
 
