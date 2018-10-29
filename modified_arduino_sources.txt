@@ -41,12 +41,10 @@
         */
         bool WiFiSTAClass::setHostname(const char * hostname)
         {
-            String _hostname;
-            if(hostname) _hostname = hostname;
-            if(WiFiGenericClass::getMode() == WIFI_MODE_NULL || _hostname.length() == 0){
-                return false;
-            }
-            return tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, _hostname.c_str()) == 0;
+            static char _hostname[TCPIP_HOSTNAME_MAX_SIZE+1];
+            if(hostname) strlcpy(_hostname, hostname, sizeof(_hostname));
+            return WiFiGenericClass::getMode() == WIFI_MODE_NULL ? 0 :
+                tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, _hostname) == 0;
         }
 
 
@@ -63,5 +61,24 @@
                 WiFiSTAClass::_setStatus(WL_DISCONNECTED);
                 WiFi.setHostname(NULL); //<<<<< added line
                 setStatusBits(STA_STARTED_BIT);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

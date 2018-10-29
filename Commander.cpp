@@ -20,7 +20,7 @@ static void wifi_erase(WiFiClient&, String);
 static void net_hostname(WiFiClient&, String);
 static void net_APname(WiFiClient&, String);
 static void net_mac(WiFiClient&, String);
-static void net_status(WiFiClient&, String);
+static void net_servers(WiFiClient&, String);
 
 //=============================================================================
 // command list - name:function
@@ -33,24 +33,25 @@ using cmd_t = struct {
 };
 
 static cmd_t commands[] = {
-        { "?",          NULL,           "(help)" },
-        { "help",       NULL,           "(you are here)" },
-        { "bye",        NULL,           "(close this connection)" },
+        //name          function        help
+        { "?",          NULL,           "?                                  :alias for help" },
+        { "help",       NULL,           "help                               :you are here" },
+        { "bye",        NULL,           "bye                                :close this connection" },
         { "sys",        NULL,           NULL },
-        {   "boot",     sys_boot,       "<boot | boot=AP | boot=STA>" },
-        {   "reboot",   sys_reboot,     NULL },
-        {   "erase all",sys_erase_all,  NULL },
+        {   "boot",     sys_boot,       "sys <boot | boot=AP | boot=STA>    :view or set boot flag" },
+        {   "reboot",   sys_reboot,     "sys reboot                         :reset esp32" },
+        {   "erase all",sys_erase_all,  "sys erase all                      :erase all stored settings" },
 
         { "wifi",       NULL,           NULL },
-        {   "list",     wifi_list,      NULL },
-        {   "add",      wifi_add,       "add # <ssid=ssidname | pass=password>" },
-        {   "erase",    wifi_erase,     "erase #" },
+        {   "list",     wifi_list,      "wifi list                          :list all stored wifi connections" },
+        {   "add",      wifi_add,       "wifi add # <ssid=name | pass=pw>   :add ssid or password for index# 0-7" },
+        {   "erase",    wifi_erase,     "wifi erase #                       :erase stored wifi info in index# 0-7" },
 
         { "net",        NULL,           NULL },
-        {   "hostname", net_hostname,   "<hostname | hostname=myname>" },
-        {   "APname",   net_APname,     "<APname | APname=myapname>" },
-        {   "mac",      net_mac,        NULL },
-        {   "status",   net_status,     NULL },
+        {   "hostname", net_hostname,   "net <hostname | hostname=myname>   :view or set hostname" },
+        {   "APname",   net_APname,     "net <APname | APname=myapname>     :view or set access point name" },
+        {   "mac",      net_mac,        "net mac                            :view mac address" },
+        {   "servers",  net_servers,    "net servers                        :view telnet server status" },
 
         { NULL,         NULL }              //end of table
 };
@@ -60,23 +61,13 @@ static cmd_t commands[] = {
 //=============================================================================
 void help(WiFiClient& client)
 {
-    client.printf("available commands:\n");
-    for(auto i = 0, ii = 0; commands[i].cmd != NULL; i++){
-        if(commands[i].func == NULL){
-            ii = i; //save root command index
-            if(commands[i+1].func) continue; //if next command has func, no print
-            //else is a root command with no options
-            client.printf("  %s %s\n",
-                commands[i].cmd, commands[i].help ? commands[i].help : commands[i].cmd
-            );
-            continue; //don't print root command
-        }
-        client.printf("  %s %s\n",
-            commands[ii].cmd, commands[i].help ? commands[i].help : commands[i].cmd
-        );
+    client.printf("\navailable commands:\n\n");
+    for(auto i = 0; commands[i].cmd != NULL; i++){
+        if(commands[i].help) client.printf("%s\n", commands[i].help);
     }
+    client.printf("\n");
 }
-void bad(WiFiClient& client){ client.printf("unknown command\n\n"); }
+void bad(WiFiClient& client){ client.printf("unknown command\n"); }
 
 //=============================================================================
 // process incoming command passed from telnet function (already trimmed)
@@ -287,8 +278,8 @@ static void net_mac(WiFiClient& client, String s)
     client.printf("%s\n", WiFi.macAddress().c_str());
 }
 
-//net status
-static void net_status(WiFiClient& client, String s)
+//net servers
+static void net_servers(WiFiClient& client, String s)
 {
     if(s[0]){ help(client); return;  }
     telnet_info.status(client);

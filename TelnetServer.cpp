@@ -120,22 +120,27 @@ void TelnetServer::handler_info(msg_t msg)
             if(len){
                 char c = 0;
                 //read up to len bytes, while less than max cmd size
+                //line endings-
+                //CR+LF - ok (Windows type)
+                //LF - ok (Unix type)
+                //CR - ignored (some may use CR only, ignore them)
                 for(; len && s.length() < maxlen; len--){
                     c = m_client.read(); //get 1 byte
                     if(c >= ' '){ s += c; continue; } //if a char, add and keep going
-                    if(c == '\r' || c == '\n') break; //found command end
+                    if(c == '\r') continue; //ignore CR
+                    if(c == '\n') break; //found command end
                     //special char, not cr/lf
                     //clear string
                     s = "";
                 }
-                //check last char- if cr or lf, process
-                if(c == '\r' || c == '\n'){
+                //check last char- if lf, process
+                if(c == '\n'){
                     s.trim();
                     if(s.length()){
                         Commander::process(m_client, s);
                         s = "";
-                        m_client.printf("\n$ ");
                     }
+                    m_client.printf("$ ");
                 }
                 //if too many chars
                 if(s.length() >= maxlen){
