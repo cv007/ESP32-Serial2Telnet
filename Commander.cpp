@@ -205,8 +205,6 @@ static void wifi_add(WiFiClient& client, String s)
 //wifi erase
 static void wifi_erase(WiFiClient& client, String s)
 {
-    if(s[0] != ' '){ help(client); return; }
-    s.trim();
     //"wifi erase 0"
     int idx = 0;
     if(s != "0"){

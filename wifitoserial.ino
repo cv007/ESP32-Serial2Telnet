@@ -52,6 +52,7 @@
 #include "TelnetServer.hpp"
 #include "NvsSettings.hpp"
 #include "Commander.hpp"
+#include "WebServer.hpp"
 
 
 //sw_boot (IO0) long press = run wifi access point
@@ -70,9 +71,9 @@ TelnetServer telnet_info(2300, "info", TelnetServer::INFO);
 TelnetServer telnet_uart2(2302, "uart2", TelnetServer::SERIAL2);
 
 
-
-
-//start access point, start telnet info server port 2300
+//start access point,
+//start telnet info server port 2300
+//start web server port 80 (can use browser to enter commands)
 //to access- telnet 192.168.4.1 2300
 //then run commands (mainly to set wifi credentials)
 //port 2302 not active
@@ -90,12 +91,15 @@ void ap_mode(){
 
     WiFi.softAP(APname.c_str());
     TelnetServer telnet_ap(2300, "info", TelnetServer::INFO);
+    WebServer web_server(80, "http");
     Serial.printf("%s\n\n",WiFi.softAPIP().toString().c_str());
 
     delay(5000);
     telnet_ap.start();
+    web_server.start();
     for(;;){
         telnet_ap.check();
+        web_server.check();
     }
 }
 
@@ -167,6 +171,8 @@ void setup()
     telnet_uart2.start();
 }
 
+
+
 //main loop
 void loop()
 {
@@ -195,7 +201,6 @@ void loop()
     //let each server check client connections/data
     telnet_info.check();
     telnet_uart2.check();
-
 
     //check switch - long press to go into AP mode
     if(sw_boot.long_press()){
