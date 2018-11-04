@@ -4,7 +4,7 @@
 
 // max ssid size = 31, max pass size = 63
 // store ssid 0-m_wifimaxn, pass 0-m_wifimaxn
-// store hostname, APname, boot
+// store hostname, APname, bootAP
 
 struct NvsSettings {
 
@@ -25,9 +25,8 @@ struct NvsSettings {
 
     bool clear();                   //clear all nvs entries for this namespace
 
-    using boot_t = enum : bool { STA, AP };
-    bool boot();                    //get value to run AP or STA
-    size_t boot(boot_t);            //set value to run AP or STA
+    bool boot_to_AP();              //get boot val, 1=boot to AP mode
+    size_t boot_to_AP(bool);        //set boot val, 1=AP, 0=STA
 
     bool erase_all();               //erase all data in this namespace
 

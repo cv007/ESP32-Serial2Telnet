@@ -53,7 +53,7 @@ size_t NvsSettings::APname(String s){   return puts(String("APname"), s); }
 
 bool NvsSettings::clear(){              return m_settings.clear(); }
 
-bool NvsSettings::boot(){               return m_settings.getBool("boot", STA); }
-size_t NvsSettings::boot(boot_t tf){    return m_settings.putBool("boot", tf); }
+bool NvsSettings::boot_to_AP(){         return m_settings.getBool("boot", false); }
+size_t NvsSettings::boot_to_AP(bool tf){return m_settings.putBool("boot", tf); }
 
 bool NvsSettings::erase_all(){ return m_settings.clear(); }

@@ -9,7 +9,7 @@ extern TelnetServer telnet_uart2;
 // commands
 //=============================================================================
 //sys
-static void sys_boot(WiFiClient&, String);
+static void sys_bootAP(WiFiClient&, String);
 static void sys_reboot(WiFiClient&, String);
 static void sys_erase_all(WiFiClient&, String);
 //wifi
@@ -38,7 +38,7 @@ static cmd_t commands[] = {
         { "help",       NULL,           "help                               :you are here" },
         { "bye",        NULL,           "bye                                :close this connection" },
         { "sys",        NULL,           NULL },
-        {   "boot",     sys_boot,       "sys <boot | boot=AP | boot=STA>    :view or set boot flag" },
+        {   "bootAP",   sys_bootAP,     "sys <bootAP | bootAP=0 | bootAP=1> :view or set boot flag" },
         {   "reboot",   sys_reboot,     "sys reboot                         :reset esp32" },
         {   "erase all",sys_erase_all,  "sys erase all                      :erase all stored settings" },
 
@@ -108,23 +108,23 @@ void Commander::process(WiFiClient& client, String s)
 //=============================================================================
 // all command functions
 //=============================================================================
-//sys boot
-static void sys_boot(WiFiClient& client, String s)
+//sys bootAP
+static void sys_bootAP(WiFiClient& client, String s)
 {
     //no args
     if(not s[0]){
         NvsSettings settings;
-        client.printf("boot: %s\n", settings.boot() ? "AP" : "STA");
+        client.printf("bootAP: %s\n", settings.boot_to_AP() ? "true" : "false");
     }
-    //=AP
-    else if(s.startsWith("=AP")){
+    //=1
+    else if(s.startsWith("=1")){
         NvsSettings settings;
-        settings.boot(settings.AP);
+        settings.boot_to_AP(true);
     }
-    //=STA
-    else if(s.startsWith("=STA")){
+    //=0
+    else if(s.startsWith("=0")){
         NvsSettings settings;
-        settings.boot(settings.STA);
+        settings.boot_to_AP(false);
     }
     else help(client);
 }

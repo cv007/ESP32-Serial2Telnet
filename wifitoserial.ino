@@ -143,10 +143,10 @@ void setup()
 
     //if boot mode set to AP, run access point
     NvsSettings settings;
-    if(settings.boot() == settings.AP){
+    if(settings.boot_to_AP()){
         //was flagged to boot to AP mode
         //back to STA for next boot
-        settings.boot(settings.STA);
+        settings.boot_to_AP(false);
         //start access point
         ap_mode();
     }
@@ -209,7 +209,7 @@ void loop()
         telnet_info.stop();
         telnet_uart2.stop();
         NvsSettings settings;
-        settings.boot(settings.AP);
+        settings.boot_to_AP(true);
         //led blink fast 2sec, then off 2sec
         //wait for release so sw is not pressed when rebooted
         //which would then boot into bootloader
