@@ -18,12 +18,23 @@ hw_timer_t* m_timer0 = NULL;
 //iterate through in timer0 isr
 std::vector<LedStatus*> led_list;
 
-//isr function, cjeck all led's
+//isr function, check all led's
 void IRAM_ATTR timer0_isr()
 {
     for(auto i : led_list) i->update();
 }
 
+//setup timer0
+void timer0_init()
+{
+    if(m_timer0) return;
+    //first instantiation will start timer 0
+    //setup timer0 for a 10Hz irq rate
+    m_timer0 = timerBegin(0, 80, true);  //80000000/80 = 1000000MHz, true=count up
+    timerAttachInterrupt(m_timer0, &timer0_isr, true);//true=edge type irq
+    timerAlarmWrite(m_timer0, 100000, true); //1000000/100000= 10Hz, true=auto reload
+    timerAlarmEnable(m_timer0);
+}
 
 
 
@@ -37,14 +48,7 @@ LedStatus::LedStatus(uint8_t pin, bool invert)
     pinMode(pin, OUTPUT);
     off();                      //init state is off
     led_list.push_back(this);   //save this instance to list
-    if(m_timer0) return;        //timer0 already running
-
-    //first instantiation will start timer 0
-    //setup timer0 for a 10Hz irq rate
-    m_timer0 = timerBegin(0, 80, true);  //80000000/80 = 1000000MHz, true=count up
-    timerAttachInterrupt(m_timer0, &timer0_isr, true);//true=edge type irq
-    timerAlarmWrite(m_timer0, 100000, true); //1000000/100000= 10Hz, true=auto reload
-    timerAlarmEnable(m_timer0);
+    timer0_init();              //init timer0 if not already done
 }
 
 //called by timer0 isr (IRAM_ATTR may not be necessary,
