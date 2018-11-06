@@ -22,4 +22,6 @@ struct Button {
     uint32_t        m_lastms;
     state_t         m_prev_state;
     uint16_t        m_long_ms;
+
+    state_t         state();
 };
