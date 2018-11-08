@@ -1,4 +1,18 @@
 #include "NvsSettings.hpp"
+#include <WiFi.h>
+
+//make_name will add last 4 mac address digits
+const String hostname_default{"SNAP-"};
+const String APname_default{"SNAP-AP-"};
+
+//local function
+String make_name(String nam)
+{
+    //nn:nn:mm:nn:nn:nn
+    String s = WiFi.macAddress().substring(12);
+    s.replace(":","");
+    return nam + s;
+}
 
 
 NvsSettings::NvsSettings()
@@ -45,15 +59,43 @@ size_t NvsSettings::pass(uint8_t idx, String pass)
     return puts(String("pass" + String(idx)), pass);
 }
 
-String NvsSettings::hostname(){         return gets(String("hostname"), {}); }
-size_t NvsSettings::hostname(String s){ return puts(String("hostname"), s); }
+String NvsSettings::hostname()
+{
+    String s = gets(String("hostname"),{});
+    if(s.length()) return s;
+    return make_name(hostname_default);
+}
+size_t NvsSettings::hostname(String s)
+{
+    return puts(String("hostname"), s);
+}
 
-String NvsSettings::APname(){           return gets(String("APname"), {}); }
-size_t NvsSettings::APname(String s){   return puts(String("APname"), s); }
+String NvsSettings::APname()
+{
+    String s = gets(String("APname"), {});
+    if(s.length()) return s;
+    return make_name(APname_default);
+}
+size_t NvsSettings::APname(String s)
+{
+    return puts(String("APname"), s);
+}
 
-bool NvsSettings::clear(){              return m_settings.clear(); }
+bool NvsSettings::clear()
+{
+    return m_settings.clear();
+}
 
-bool NvsSettings::boot_to_AP(){         return m_settings.getBool("boot", false); }
-size_t NvsSettings::boot_to_AP(bool tf){return m_settings.putBool("boot", tf); }
+bool NvsSettings::boot_to_AP()
+{
+    return m_settings.getBool("boot", false);
+}
+size_t NvsSettings::boot_to_AP(bool tf)
+{
+    return m_settings.putBool("boot", tf);
+}
 
-bool NvsSettings::erase_all(){ return m_settings.clear(); }
+bool NvsSettings::erase_all()
+{
+    return m_settings.clear();
+}
