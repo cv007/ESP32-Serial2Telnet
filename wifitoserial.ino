@@ -79,14 +79,14 @@ void restart()
     ESP.restart(); //just reboot and start over
 }
 
-//wifi connect, i attempts (i seconds)
+//wifi connect, n attempts (n seconds)
 //if cannot connect, reset
-void wifi_connect(int i)
+void wifi_connect(int n)
 {
     led_wifi.slow();
-    for(; ; delay(1000), i--){
-        if(i == 0) restart();
-        Serial.printf("connecting wifi...%d\n", i);
+    for(; ; delay(1000), n--){
+        if(n == 0) restart();
+        Serial.printf("connecting wifi...%d\n", n);
         if(wifiMulti.run() == WL_CONNECTED){
             Serial.printf("connected to SSID: %s   client IP: %s\n\n",
                 WiFi.SSID().c_str(), WiFi.localIP().toString().c_str()
@@ -97,27 +97,27 @@ void wifi_connect(int i)
     led_wifi.on();
 }
 
-//start access point,
+//start access point if no wifi settings, or boot mode set
 //start telnet info server port 2300
 //start web server port 80 (can use browser to enter commands)
 //to access- telnet 192.168.4.1 2300
 //then run commands (mainly to set wifi credentials)
 //port 2302 not active
 void ap_mode(){
-    //led blink fast
+
+    //led blink fast in AP mode
     led_wifi.fast();
 
     Serial.printf("\nstarting access point mode...");
 
     NvsSettings settings;
-    String APname = settings.APname();
-
-    WiFi.softAP(APname.c_str());
-    TelnetServer telnet_ap(2300, "info", TelnetServer::INFO);
-    WebServer web_server(80, "http");
-    Serial.printf("%s\n\n",WiFi.softAPIP().toString().c_str());
+    WiFi.softAP(settings.APname().c_str());
+    Serial.printf("access point ip address: %s\n\n",WiFi.softAPIP().toString().c_str());
 
     delay(2000);
+
+    TelnetServer telnet_ap(2300, "info", TelnetServer::INFO);
+    WebServer web_server(80, "http");
 
     telnet_ap.start();
     web_server.start();
@@ -126,6 +126,9 @@ void ap_mode(){
         telnet_ap.check();
         web_server.check();
     }
+    //to exit AP mode
+    //can use 'sys reboot' command from telnet/web,
+    //or simply use reset button
 }
 
 
@@ -134,6 +137,10 @@ void setup()
 {
     //debug ouput
     Serial.begin(115200);
+
+    //led initially on (to show alive),
+    //wifi_connect() will take care of the rest
+    led_wifi.on();
 
     //delay a little before starting
     //(keep power down while usb enumerating when powered by SNAP)
@@ -150,6 +157,7 @@ void setup()
         ap_mode();
     }
 
+    //STA mode
     Serial.printf("\nstarting station mode...\n");
 
     bool found = false;
@@ -161,13 +169,15 @@ void setup()
         Serial.printf("adding wifi credentials [%d] from nvs storage\n", i);
         found = true;
     }
+
+    //if no stored wifi SSID found, go to AP mode
     if(not found){
         Serial.printf("no wifi credentials found, switching to AP mode\n");
         ap_mode();
     }
 
     //set hostname
-    //(setHostname modified, so can set before network started)
+    //(setHostname code modified, so can set just once before network started)
     String hn = settings.hostname();
     Serial.printf("setting hostname to [%s]\n", hn.c_str());
     WiFi.setHostname(hn.c_str());
@@ -192,7 +202,7 @@ void loop()
     //check if connection lost
     if(wifiMulti.run() != WL_CONNECTED){
         Serial.printf("wifi connection lost, attempting to reconnect...\n");
-        //try for 20 times (1 second interval), if failed just reset esp)
+        //try for 20 times (1 second interval), if failed just reset esp
         wifi_connect(20);
     }
 
@@ -217,6 +227,7 @@ void loop()
             if(t > 40) t = 0;             //start over
 
         }
+        delay(100); //debounce time up
         ESP.restart();
     }
 }
