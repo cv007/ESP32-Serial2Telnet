@@ -130,6 +130,7 @@ void ap_mode(){
     //to exit AP mode
     //can use 'sys reboot' command from telnet/web,
     //or simply use reset button
+
 }
 
 
