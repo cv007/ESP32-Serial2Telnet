@@ -1,18 +1,9 @@
 #include "NvsSettings.hpp"
 #include <WiFi.h>
 
-//make_name will add last 4 mac address digits
-const String hostname_default{"SNAP-"};
-const String APname_default{"SNAP-AP-"};
-
-//local function
-String make_name(String nam)
-{
-    //nn:nn:mm:nn:nn:nn
-    String s = WiFi.macAddress().substring(12);
-    s.replace(":","");
-    return nam + s;
-}
+//default names if not set yet
+const String hostname_default = "SNAP";
+const String APname_default = "SNAP-AP";
 
 
 NvsSettings::NvsSettings()
@@ -26,7 +17,7 @@ uint8_t NvsSettings::wifimaxn()
 }
 
 //private
-String NvsSettings::gets(String s, String alt)
+String NvsSettings::gets(String s, String alt = String())
 {
     return m_settings.getString(s.c_str(), alt);
 }
@@ -40,7 +31,7 @@ size_t NvsSettings::puts(String key, String s)
 String NvsSettings::ssid(uint8_t idx)
 {
     if(idx > m_wifimaxn) return {};
-    return gets(String("ssid" + String(idx)), {});
+    return gets(String("ssid" + String(idx)));
 }
 size_t NvsSettings::ssid(uint8_t idx, String ssid)
 {
@@ -51,7 +42,7 @@ size_t NvsSettings::ssid(uint8_t idx, String ssid)
 String NvsSettings::pass(uint8_t idx)
 {
     if(idx > m_wifimaxn) return {};
-    return gets(String("pass" + String(idx)), {});
+    return gets(String("pass" + String(idx)));
 }
 size_t NvsSettings::pass(uint8_t idx, String pass)
 {
@@ -61,9 +52,9 @@ size_t NvsSettings::pass(uint8_t idx, String pass)
 
 String NvsSettings::hostname()
 {
-    String s = gets(String("hostname"),{});
+    String s = gets(String("hostname"));
     if(s.length()) return s;
-    return make_name(hostname_default);
+    return hostname_default;
 }
 size_t NvsSettings::hostname(String s)
 {
@@ -72,9 +63,9 @@ size_t NvsSettings::hostname(String s)
 
 String NvsSettings::APname()
 {
-    String s = gets(String("APname"), {});
+    String s = gets(String("APname"));
     if(s.length()) return s;
-    return make_name(APname_default);
+    return APname_default;
 }
 size_t NvsSettings::APname(String s)
 {

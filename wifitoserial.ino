@@ -111,7 +111,6 @@ void ap_mode(){
 
     NvsSettings settings;
     String APname = settings.APname();
-    if(APname.length() == 0) APname = "SNAP-AP";
 
     WiFi.softAP(APname.c_str());
     TelnetServer telnet_ap(2300, "info", TelnetServer::INFO);
@@ -167,13 +166,11 @@ void setup()
         ap_mode();
     }
 
-    //set hostname if stored
+    //set hostname
     //(setHostname modified, so can set before network started)
     String hn = settings.hostname();
-    if(hn.length()){
-        Serial.printf("setting hostname to [%s]\n", hn.c_str());
-        WiFi.setHostname(hn.c_str());
-    }
+    Serial.printf("setting hostname to [%s]\n", hn.c_str());
+    WiFi.setHostname(hn.c_str());
 
     //10 attempts
     wifi_connect(10);
