@@ -48,6 +48,7 @@
 */
 #include <WiFi.h>
 #include <WiFiMulti.h>
+#include <rom/rtc.h> //reset reason
 
 #include "TelnetServer.hpp"
 #include "NvsSettings.hpp"
@@ -137,17 +138,17 @@ void ap_mode(){
 //one time setup
 void setup()
 {
+    //delay a little before starting (5 sec)
+    //(keep power down while usb enumerating when powered by SNAP)
+    //only deepSleep if not just woke up from deepSleep
+    if(rtc_get_reset_reason(0) !=  DEEPSLEEP_RESET) ESP.deepSleep(5 * 1000000);
+
     //debug ouput
     Serial.begin(115200);
 
     //led initially on (to show alive),
     //wifi_connect() will take care of the rest
     led_wifi.on();
-
-    //delay a little before starting
-    //(keep power down while usb enumerating when powered by SNAP)
-    Serial.printf("\n");
-    for(int i = 5; i > 0; Serial.printf("startup delay %d\n", i), delay(1000), i--);
 
     //if boot mode set to AP, run access point
     NvsSettings settings;
