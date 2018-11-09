@@ -146,8 +146,9 @@ void setup()
     //debug ouput
     Serial.begin(115200);
 
-    //led initially on (to show alive),
+    //led initially on (to show alive)
     //wifi_connect() will take care of the rest
+    //(but will end up in wifi_connect() soon, so probably not worht it)
     led_wifi.on();
 
     //if boot mode set to AP, run access point
