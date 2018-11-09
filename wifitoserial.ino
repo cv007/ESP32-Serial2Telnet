@@ -164,8 +164,10 @@ void setup()
     //STA mode
     Serial.printf("\nstarting station mode...\n");
 
+    //add stored wifi credentials
     bool found = false;
-    for( uint8_t i = 0; i < settings.wifimaxn(); i++ ){
+    uint8_t maxn = settings.wifimaxn();
+    for( uint8_t i = 0; i < maxn; i++ ){
         String s = settings.ssid(i);
         String p = settings.pass(i);
         if(not s.length()) continue; //if ssid blank, skip
