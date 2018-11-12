@@ -109,9 +109,11 @@ void ap_mode(){
     //led blink fast in AP mode
     led_wifi.fast();
 
-    Serial.printf("\nstarting access point mode...");
+    Serial.printf("\n== starting access point mode ==");
 
     NvsSettings settings;
+    //back to STA for next boot
+    settings.boot_to_AP(false);
     WiFi.softAP(settings.APname().c_str());
     Serial.printf("access point ip address: %s\n\n",WiFi.softAPIP().toString().c_str());
 
@@ -140,7 +142,8 @@ void setup()
 {
     //delay a little before starting (5 sec)
     //(keep power down while usb enumerating when powered by SNAP)
-    //only deepSleep if not just woke up from deepSleep
+    //deepSleep any time we didn't just wake from deepSleep
+    //(any reset cause except deepSleep)
     if(rtc_get_reset_reason(0) !=  DEEPSLEEP_RESET) ESP.deepSleep(5 * 1000000);
 
     //debug ouput
@@ -153,16 +156,10 @@ void setup()
 
     //if boot mode set to AP, run access point
     NvsSettings settings;
-    if(settings.boot_to_AP()){
-        //was flagged to boot to AP mode
-        //back to STA for next boot
-        settings.boot_to_AP(false);
-        //start access point
-        ap_mode();
-    }
+    if(settings.boot_to_AP()) ap_mode();
 
     //STA mode
-    Serial.printf("\nstarting station mode...\n");
+    Serial.printf("\n== starting station mode ==\n");
 
     //add stored wifi credentials
     bool found = false;
@@ -184,9 +181,9 @@ void setup()
 
     //set hostname
     //(setHostname code modified, so can set just once before network started)
-    String hn = settings.hostname();
-    Serial.printf("setting hostname to [%s]\n", hn.c_str());
-    WiFi.setHostname(hn.c_str());
+    const char* hn = settings.hostname().c_str();
+    Serial.printf("setting hostname to [%s]\n", hn);
+    WiFi.setHostname(hn);
 
     //10 attempts
     wifi_connect(10);
