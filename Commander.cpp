@@ -205,6 +205,7 @@ static void wifi_add(WiFiClient& client, String s)
         settings.pass(idx, &s[si+5]);
         return;
     }
+    //bad command
     help(client);
 }
 //wifi erase
@@ -250,6 +251,7 @@ static void net_hostname(WiFiClient& client, String s)
         WiFi.setHostname(s.c_str()); //and out to tcpip (may not see until reboot)
         return;
     }
+    //bad command
     help(client);
 }
 //net APname
@@ -272,31 +274,42 @@ static void net_APname(WiFiClient& client, String s)
         settings.APname(s); //nvs storage
         return;
     }
+    //bad command
     help(client);
 }
 //net mac
 static void net_mac(WiFiClient& client, String s)
 {
-    if(s[0]){ help(client); return;  }
-    client.printf("%s\n", WiFi.macAddress().c_str());
+    //no arg
+    if(not s[0]){
+        client.printf("%s\n", WiFi.macAddress().c_str());
+        return;
+    }
+    //bad command
+    help(client);
 }
 
 //net servers
 static void net_servers(WiFiClient& client, String s)
 {
-    if(s[0]){ help(client); return;  }
-    telnet_info.status(client);
-    telnet_uart2.status(client);
+    //no arg
+    if(not s[0]){
+        telnet_info.status(client);
+        telnet_uart2.status(client);
+        return;
+    }
+    //bad command
+    help(client);
 }
 
 //uart2 baud
 void uart2_baud(WiFiClient& client, String s)
 {
+    //no arg
     if(not s[0]){
         client.printf("uart2 baud: %d\n", telnet_uart2.uart_baud());
         return;
     }
-
     //"=115200"
     if(s[0] == '='){
         s = s.substring(1);
@@ -308,6 +321,6 @@ void uart2_baud(WiFiClient& client, String s)
         telnet_uart2.uart_config(baud);
         return;
     }
-
+    //bad command
     help(client);
 }

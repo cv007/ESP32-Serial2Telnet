@@ -35,6 +35,7 @@ struct TelnetServer {
     HardwareSerial&     m_serial;
 
     //TODO: add code to be able to change these settings (via info port)
+    //(can currently change baud only)
     uint32_t            m_baud{230400};
     uint32_t            m_config{SERIAL_8N1};   //default mode
     int8_t              m_rxpin{-1};            //default pin
@@ -43,14 +44,3 @@ struct TelnetServer {
 
 };
 
-//TODO
-/*
-    be able to specify baud on initial setup, and also later
-    currently baud is fixed to 230400
-
-    will have to do a m_serial.end()/m_serial.begin(baud) to change baud
-    can just end/begin anywhere as Serial/1/2 are global
-    Commander-
-        serial 0 baud 115200
-        serial 2 baud 19200
-*/
