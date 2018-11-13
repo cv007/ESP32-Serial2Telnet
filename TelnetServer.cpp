@@ -34,25 +34,16 @@ TelnetServer::TelnetServer(int port, const char* nam, serve_t typ)
 {
 }
 
-//uart settings baud, mode, txpin, rxpin, invert
-//(Commander currently only allows to set baud for now)
-void TelnetServer::uart_config(uint32_t baud, uint32_t mode, int8_t txpin, int8_t rxpin, bool invert)
+void TelnetServer::uart_init()
 {
-    if(m_serve_type == INFO) return; //info does not use uart
-    m_baud = baud;
-    m_config = mode;
-    m_rxpin = rxpin;
-    m_txpin = txpin;
-    m_txrx_invert = invert;
-
-    //make client reconnect, where STOP/START will take care of new uart settings
-    stop_client();
-}
-
-//for Commander to view baud
-uint32_t TelnetServer::uart_baud()
-{
-    return m_serve_type == INFO ? 0 : m_baud;
+    //get baud from stored value (other values currently fixed)
+    if(m_serve_type == SERIAL2){
+        NvsSettings settings;
+        m_baud = settings.uart2baud();
+    }
+    m_serial.begin(m_baud, m_config, m_rxpin, m_txpin, m_txrx_invert);
+    //set serial timeout for reads
+    m_serial.setTimeout(0);
 }
 
 void TelnetServer::start()
@@ -177,9 +168,7 @@ void TelnetServer::handler_uart(msg_t msg)
 {
     switch(msg){
         case START:
-            m_serial.begin(m_baud, m_config, m_rxpin, m_txpin, m_txrx_invert);
-            //set serial timeout for reads
-            m_serial.setTimeout(0);
+            uart_init();
             break;
         case TelnetServer::STOP:
             m_serial.end();

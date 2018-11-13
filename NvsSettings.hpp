@@ -4,7 +4,7 @@
 
 // max ssid size = 31, max pass size = 63
 // store ssid 0-m_wifimaxn, pass 0-m_wifimaxn
-// store hostname, APname, bootAP
+// store hostname, APname, boot, uart2baud
 
 struct NvsSettings {
 
@@ -20,6 +20,9 @@ struct NvsSettings {
 
     String APname();                //get access point name
     size_t APname(String s);        //set acces point name (used in AP mode)
+
+    uint32_t uart2baud();           //get uart2 baud
+    size_t uart2baud(uint32_t);     //set uart2 baud
 
     uint8_t wifimaxn();             //-> max number of wifi credentials can store
 

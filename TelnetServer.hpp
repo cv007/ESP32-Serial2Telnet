@@ -14,9 +14,7 @@ struct TelnetServer {
     void check          ();
     void status         (WiFiClient&);
     void stop_client    ();
-    //uart settings baud, mode, txpin, rxpin, invert
-    void uart_config    (uint32_t, uint32_t = SERIAL_8N1, int8_t = -1, int8_t = -1, bool = false);
-    uint32_t uart_baud  (); //get current baudrate
+    void uart_init      ();
 
     private:
 
@@ -35,8 +33,8 @@ struct TelnetServer {
     HardwareSerial&     m_serial;
 
     //TODO: add code to be able to change these settings (via info port)
-    //(can currently change baud only)
-    uint32_t            m_baud{230400};
+    //(can currently change baud only- baud is read fron nvs settings when init is run)
+    uint32_t            m_baud{115200};
     uint32_t            m_config{SERIAL_8N1};   //default mode
     int8_t              m_rxpin{-1};            //default pin
     int8_t              m_txpin{-1};            //default pin

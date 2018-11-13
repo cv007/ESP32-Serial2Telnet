@@ -307,7 +307,8 @@ void uart2_baud(WiFiClient& client, String s)
 {
     //no arg
     if(not s[0]){
-        client.printf("uart2 baud: %d\n", telnet_uart2.uart_baud());
+        NvsSettings settings;
+        client.printf("uart2 baud: %d\n", settings.uart2baud());
         return;
     }
     //"=115200"
@@ -318,7 +319,8 @@ void uart2_baud(WiFiClient& client, String s)
             client.printf("baud value not valid\n");
             return;
         }
-        telnet_uart2.uart_config(baud);
+        NvsSettings settings;
+        settings.uart2baud(baud);
         return;
     }
     //bad command

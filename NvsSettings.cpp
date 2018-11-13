@@ -4,6 +4,8 @@
 //default names if not set yet
 const String hostname_default = "SNAP";
 const String APname_default = "SNAP-AP";
+//default uart2 baud
+const uint32_t uart2baud_default = 115200;
 
 
 NvsSettings::NvsSettings()
@@ -70,6 +72,15 @@ String NvsSettings::APname()
 size_t NvsSettings::APname(String s)
 {
     return puts(String("APname"), s);
+}
+
+uint32_t NvsSettings::uart2baud()
+{
+    return m_settings.getUInt("uart2baud", uart2baud_default);
+}
+size_t NvsSettings::uart2baud(uint32_t baud)
+{
+    return m_settings.putUInt("uart2baud", baud);
 }
 
 bool NvsSettings::clear()
