@@ -21,6 +21,8 @@ static void net_hostname(WiFiClient&, String);
 static void net_APname(WiFiClient&, String);
 static void net_mac(WiFiClient&, String);
 static void net_servers(WiFiClient&, String);
+//uart2
+static void uart2_baud(WiFiClient&, String);
 
 //=============================================================================
 // command list - name:function
@@ -52,6 +54,9 @@ static cmd_t commands[] = {
         {   "APname",   net_APname,     "net <APname | APname=myapname>     :view or set access point name" },
         {   "mac",      net_mac,        "net mac                            :view mac address" },
         {   "servers",  net_servers,    "net servers                        :view telnet server status" },
+
+        { "uart2",      NULL,           NULL },
+        {   "baud",     uart2_baud,     "uart2 <baud | baud=115200>         :view or set uart2 baudrate" },
 
         { NULL,         NULL }              //end of table
 };
@@ -282,4 +287,27 @@ static void net_servers(WiFiClient& client, String s)
     if(s[0]){ help(client); return;  }
     telnet_info.status(client);
     telnet_uart2.status(client);
+}
+
+//uart2 baud
+void uart2_baud(WiFiClient& client, String s)
+{
+    if(not s[0]){
+        client.printf("uart2 baud: %d\n", telnet_uart2.uart_baud());
+        return;
+    }
+
+    //"=115200"
+    if(s[0] == '='){
+        s = s.substring(1);
+        int baud = s.toInt();
+        if(baud == 0){
+            client.printf("baud value not valid\n");
+            return;
+        }
+        telnet_uart2.uart_config(baud);
+        return;
+    }
+
+    help(client);
 }

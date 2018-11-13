@@ -25,6 +25,10 @@
   net APname=myAPname           //set APname (max 32 chars)
   net mac                       //show mac address
   net status                    //show telnet servers status
+
+  uart2 baud                    //show uart2 baud
+  uart2 baud=115200             //set uart2 baud
+
 */
 
 struct Commander {

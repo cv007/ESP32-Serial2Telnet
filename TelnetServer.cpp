@@ -34,6 +34,27 @@ TelnetServer::TelnetServer(int port, const char* nam, serve_t typ)
 {
 }
 
+//uart settings baud, mode, txpin, rxpin, invert
+//(Commander currently only allows to set baud for now)
+void TelnetServer::uart_config(uint32_t baud, uint32_t mode, int8_t txpin, int8_t rxpin, bool invert)
+{
+    if(m_serve_type == INFO) return; //info does not use uart
+    m_baud = baud;
+    m_config = mode;
+    m_rxpin = rxpin;
+    m_txpin = txpin;
+    m_txrx_invert = invert;
+
+    //make client reconnect, where STOP/START will take care of new uart settings
+    stop_client();
+}
+
+//for Commander to view baud
+uint32_t TelnetServer::uart_baud()
+{
+    return m_serve_type == INFO ? 0 : m_baud;
+}
+
 void TelnetServer::start()
 {
     info(m_name, "starting", m_port);
