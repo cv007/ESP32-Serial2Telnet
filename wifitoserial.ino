@@ -50,6 +50,7 @@
 #include <WiFiMulti.h>
 #include <rom/rtc.h> //reset reason
 
+
 #include "TelnetServer.hpp"
 #include "NvsSettings.hpp"
 #include "Commander.hpp"
@@ -195,6 +196,26 @@ void setup()
     //start the servers
     telnet_info.start();
     telnet_uart2.start();
+
+
+    /*
+    //just quickly testing some code for debugging output
+    //
+    static bool _init;
+    static uint32_t hash;
+    uint32_t myvar = 0x12345678;
+    //one time- give receiver a hash and other info associated with var
+    if(not _init){
+        std::string s = __FILE__; s += __FUNCTION__;
+        _hash = std::hash<std::string>{}(s);
+        Serial.printf(":%08X:%s:%s:%u:%s\n",hash,__FILE__,__FUNCTION__,__LINE__,"myvar");
+    }
+    //use hash to identify var, send out info
+    //receiver will know which var by the hash
+    Serial.printf(":%08X:%08X\n",hash,myvar);
+    //this could be binary to reduce size
+    //<hash><cp0count><uint32_t>
+    */
 }
 
 
