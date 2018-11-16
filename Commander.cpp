@@ -11,7 +11,7 @@ extern TelnetServer telnet_uart2;
 //sys
 static void sys_bootAP(WiFiClient&, String);
 static void sys_reboot(WiFiClient&, String);
-static void sys_erase_all(WiFiClient&, String);
+static void sys_erase(WiFiClient&, String);
 //wifi
 static void wifi_list(WiFiClient&, String);
 static void wifi_add(WiFiClient&, String);
@@ -36,13 +36,12 @@ using cmd_t = struct {
 
 static cmd_t commands[] = {
         //name          function        help
-        { "?",          NULL,           "?                                  :alias for help" },
         { "help",       NULL,           "help                               :you are here" },
         { "bye",        NULL,           "bye                                :close this connection" },
         { "sys",        NULL,           NULL },
         {   "bootAP",   sys_bootAP,     "sys <bootAP | bootAP=0 | bootAP=1> :view or set boot flag" },
         {   "reboot",   sys_reboot,     "sys reboot                         :reset esp32" },
-        {   "erase all",sys_erase_all,  "sys erase all                      :erase all stored settings" },
+        {   "erase",    sys_erase,      "sys erase                          :erase all stored settings" },
 
         { "wifi",       NULL,           NULL },
         {   "list",     wifi_list,      "wifi list                          :list all stored wifi connections" },
@@ -116,21 +115,11 @@ void Commander::process(WiFiClient& client, String s)
 //sys bootAP
 static void sys_bootAP(WiFiClient& client, String s)
 {
+    NvsSettings settings;
     //no args
-    if(not s[0]){
-        NvsSettings settings;
-        client.printf("bootAP: %s\n", settings.boot_to_AP() ? "true" : "false");
-    }
-    //=1
-    else if(s.startsWith("=1")){
-        NvsSettings settings;
-        settings.boot_to_AP(true);
-    }
-    //=0
-    else if(s.startsWith("=0")){
-        NvsSettings settings;
-        settings.boot_to_AP(false);
-    }
+    if(not s[0]) client.printf("bootAP: %s\n", settings.boot_to_AP() ? "true" : "false");
+    else if(s.startsWith("=1")) settings.boot_to_AP(true);
+    else if(s.startsWith("=0")) settings.boot_to_AP(false);
     else help(client);
 }
 //sys reboot
@@ -141,8 +130,8 @@ static void sys_reboot(WiFiClient& client, String s)
     delay(5000);
     ESP.restart();
 }
-//sys erase all
-static void sys_erase_all(WiFiClient& client, String s)
+//sys erase
+static void sys_erase(WiFiClient& client, String s)
 {
     if(s[0]){ bad(client); return; }
     client.printf("erasing all stored data...");
@@ -231,24 +220,20 @@ static void wifi_erase(WiFiClient& client, String s)
 //net hostname
 static void net_hostname(WiFiClient& client, String s)
 {
+    NvsSettings settings;
     //no arg
     if(not s[0]){
-        NvsSettings settings;
-        client.printf("hardware: %s  stored: %s\n",
-            WiFi.getHostname(), settings.hostname().c_str()
-        );
+        client.printf("%s\n", settings.hostname().c_str());
         return;
     }
     //=myname
     if(s[0] == '='){
-        NvsSettings settings;
         s = s.substring(1);
         if(s.length() > 32){
             client.printf("hostname too long (32 chars max)\n");
             return;
         }
         settings.hostname(s); //nvs storage
-        WiFi.setHostname(s.c_str()); //and out to tcpip (may not see until reboot)
         return;
     }
     //bad command
@@ -257,15 +242,14 @@ static void net_hostname(WiFiClient& client, String s)
 //net APname
 static void net_APname(WiFiClient& client, String s)
 {
+    NvsSettings settings;
     //no arg
     if(not s[0]){
-        NvsSettings settings;
         client.printf("%s\n", settings.APname().c_str());
         return;
     }
     //=myAPname
     if(s[0] == '='){
-        NvsSettings settings;
         s = s.substring(1);
         if(s.length() > 32){
             client.printf("APname too long (32 chars max)\n");
@@ -305,9 +289,9 @@ static void net_servers(WiFiClient& client, String s)
 //uart2 baud
 void uart2_baud(WiFiClient& client, String s)
 {
+    NvsSettings settings;
     //no arg
     if(not s[0]){
-        NvsSettings settings;
         client.printf("uart2 baud: %d\n", settings.uart2baud());
         return;
     }
@@ -319,7 +303,6 @@ void uart2_baud(WiFiClient& client, String s)
             client.printf("baud value not valid\n");
             return;
         }
-        NvsSettings settings;
         settings.uart2baud(baud);
         return;
     }

@@ -121,7 +121,9 @@ void TelnetServer::handler_info(msg_t msg)
 {
     switch(msg){
         case START:
-            m_client.printf("\nConnected to info port %d (type ? for help)\n\n$ ", m_port);
+            m_client.printf("\nConnected to info port %d\n\n", m_port);
+            Commander::process(m_client, String("help"));
+            m_client.printf("$ ");
             break;
         case STOP:
             break;

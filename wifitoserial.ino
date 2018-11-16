@@ -85,13 +85,21 @@ void restart()
 //if cannot connect, reset
 void wifi_connect(int n)
 {
+    //set hostname
+    //(setHostname code modified, so can set any time)
+    //(any reconnect will get latest hostname from settings,
+    // so will see new setting if disconnect/reconnect)
+    NvsSettings settings;
+    WiFi.setHostname(settings.hostname().c_str());
+
     led_wifi.slow();
+
     for(; ; delay(1000), n--){
         if(n == 0) restart();
         Serial.printf("connecting wifi...%d\n", n);
         if(wifiMulti.run() == WL_CONNECTED){
-            Serial.printf("connected to SSID: %s   client IP: %s\n\n",
-                WiFi.SSID().c_str(), WiFi.localIP().toString().c_str()
+            Serial.printf("connected to SSID: %s   client IP: %s   hostname: %s\n\n",
+                WiFi.SSID().c_str(), WiFi.localIP().toString().c_str(), settings.hostname().c_str()
             );
             break;
         }
@@ -179,12 +187,6 @@ void setup()
         Serial.printf("no wifi credentials found, switching to AP mode\n");
         ap_mode();
     }
-
-    //set hostname
-    //(setHostname code modified, so can set just once before network started)
-    const char* hn = settings.hostname().c_str();
-    Serial.printf("setting hostname to [%s]\n", hn);
-    WiFi.setHostname(hn);
 
     //10 attempts
     wifi_connect(10);
