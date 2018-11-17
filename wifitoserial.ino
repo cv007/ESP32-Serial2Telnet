@@ -98,7 +98,7 @@ void wifi_connect(int n)
         if(n == 0) restart();
         Serial.printf("connecting wifi...%d\n", n);
         if(wifiMulti.run() == WL_CONNECTED){
-            Serial.printf("connected to SSID: %s   client IP: %s   hostname: %s\n\n",
+            Serial.printf("connected to SSID: %s\nclient IP: %s\nhostname: %s\n\n",
                 WiFi.SSID().c_str(), WiFi.localIP().toString().c_str(), settings.hostname().c_str()
             );
             break;
@@ -170,22 +170,17 @@ void setup()
     //STA mode
     Serial.printf("\n== starting station mode ==\n");
 
-    //add stored wifi credentials
-    bool found = false;
+    //add stored wifi credentials, if none found goto AP mode
     uint8_t maxn = settings.wifimaxn();
-    for( uint8_t i = 0; i < maxn; i++ ){
-        String s = settings.ssid(i);
-        String p = settings.pass(i);
-        if(not s.length()) continue; //if ssid blank, skip
-        wifiMulti.addAP(s.c_str(), p.c_str());
-        Serial.printf("adding wifi credentials [%d] from nvs storage\n", i);
-        found = true;
-    }
-
-    //if no stored wifi SSID found, go to AP mode
-    if(not found){
-        Serial.printf("no wifi credentials found, switching to AP mode\n");
-        ap_mode();
+    for( uint8_t i = 0, n = 0; i < maxn; ){
+        if(wifiMulti.addAP(settings.ssid(i).c_str(), settings.pass(i).c_str())){
+            Serial.printf("added wifi credentials [%d] from nvs storage\n", i);
+            n++;
+        }
+        if(++i == maxn and n == 0){
+            Serial.printf("no wifi credentials found, switching to AP mode\n");
+            ap_mode();
+        }
     }
 
     //10 attempts
