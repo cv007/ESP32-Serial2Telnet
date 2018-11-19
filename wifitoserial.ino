@@ -13,17 +13,17 @@
                 -to go into access point mode, press/hold boot switch
                 -to go into bootloader mode, press/hold boot switch, press reset switch
 
-  connectoions-
-    uart0 - programming connector (used for esp32 programming, debug output)
+  connections-
+    uart0 - 3pin connector (used for esp32 programming, debug output)
     uart2 - programming connector
 
 
   initial setup- (initial firmware loaded)
         power on
-            delay 5 seconds
+            delay 5 seconds in deep sleep (give time for SNAP to enumerate)
 
             if boot flag on OR no wifi credentials stored-
-                start access point mode with only telnet info port 2300 enabled
+                start access point mode with telnet info port 2300 enabled
                 boot flag is cleared
 
             try to connect to available wifi access points using stored credentials
